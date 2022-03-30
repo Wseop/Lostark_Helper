@@ -1,0 +1,10 @@
+#YellowMeteor {
+    background-color: #F7DC6F;
+}
+#MeteorTimerNormal {
+    font-size: 200px;
+}
+#MeteorTimerRed {
+    font-size: 200px;
+    color: red;
+}
