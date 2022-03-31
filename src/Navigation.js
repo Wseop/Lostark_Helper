@@ -10,7 +10,7 @@ function Navigation(props) {
           <Navbar.Brand as={Link} to="/">Lostark_Helper</Navbar.Brand>
           <Nav className="me-auto">
             <NavDropdown title="레이드">
-                <NavDropdown.Item as={Link} to ="/Raid/0">Abrelshud</NavDropdown.Item>
+                <NavDropdown.Item as={Link} to ="/Raid/0">아브렐슈드</NavDropdown.Item>
             </NavDropdown>
           </Nav>
           </Container>

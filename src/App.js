@@ -14,11 +14,11 @@ function App() {
 
       <div className="Content">
         <Switch>
-          <Route exact path="/">
-            main
-          </Route>
           <Route exact path="/Raid/:id">
             <ContentRaid />
+          </Route>
+          <Route path="/">
+            main
           </Route>
         </Switch>
       </div>

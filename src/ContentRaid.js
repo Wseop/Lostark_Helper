@@ -112,7 +112,7 @@ function AbrelshudContent(props) {
                         </Col>
                         <Col>
                             <div className="mt-5">
-                                <h2>바닥 생성 타이머</h2>
+                                <h2>바닥 재생 타이머</h2>
                                 {
                                     timerCount > 20
                                     ? <div id="MeteorTimerNormal">{timerCount}</div>
