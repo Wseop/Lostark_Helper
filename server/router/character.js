@@ -4,12 +4,25 @@ const fs = require('fs');
 const cheerio = require('cheerio');
 const axios = require('axios');
 
+// Error handle - Access-Control-Allow-Origin
+router.use((req, res, next) => { 
+    res.header("Access-Control-Allow-Origin", "*"); 
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept"); 
+    next(); 
+});
+
 function GetProfile(html) {
     let profile;
     let $ = cheerio.load(html);
 
     // Profile 관련 정보만 parsing
+    if ($('script')[2].children[0].data === '\n') {
+        return null;
+    }
     profile = $('script')[2].children[0].data.split('$.Profile = ')[1].split(';')[0];
+
+    // DEBUG
+    fs.writeFileSync('../../temp/profile.json', profile, 'utf-8');
 
     return JSON.parse(profile);
 }
@@ -54,11 +67,15 @@ function ParseEngrave(html) {
 
     let engraveList = $('.profile-ability-engrave div div ul');
     engraveList.map((i, ul) => {
-        $(ul).children('li').map((i, li) => {
-            let engrave = $(li).children('span').text().split(' Lv. ');
-            // [0] : 각인 이름, [1] : level
-            engraveData.push({engrave:engrave[0], level:engrave[1]});
-        });
+        if (ul != undefined) {
+            $(ul).children('li').map((i, li) => {
+                if (li != undefined) {
+                    let engrave = $(li).children('span').text().split(' Lv. ');
+                    // [0] : 각인 이름, [1] : level
+                    engraveData.push({engrave:engrave[0], level:engrave[1]});
+                }
+            });
+        }
     });
 
     return engraveData;
@@ -70,9 +87,9 @@ function ParseEquipment(html, equip) {
 
     $('.profile-equipment__slot').children('div').map((i, div) => {
         let key = $(div).attr('data-item');
-        
+
         // 장비탭에서 각인을 제외한 정보만 가져옴
-        if (key[0] === 'E') {
+        if (key != undefined && key[0] === 'E') {
             itemKey.push(key);
         }
     });
@@ -106,8 +123,13 @@ function ParseEquipment(html, equip) {
 
             st.name = equip[item].Element_000.value.toLowerCase();
             st.baseHP = equip[item].Element_004.value.Element_001;
-            st.bonusHP = equip[item].Element_005.value.Element_001;
-            st.engraves = equip[item].Element_006.value.Element_001.toLowerCase();
+            if (Object.entries(equip[item]).length === 9) {
+                st.bonusHP = 0;
+                st.engrave = equip[item].Element_005.value.Element_001.toLowerCase();
+            } else {
+                st.bonusHP = equip[item].Element_005.value.Element_001;
+                st.engrave = equip[item].Element_006.value.Element_001.toLowerCase();
+            }
             st.iconPath = 'https://cdn-lostark.game.onstove.com/' + equip[item].Element_001.value.slotData.iconPath;
             equipmentData.stone = st;
         }
@@ -132,20 +154,27 @@ function ParseJewel(html, profile) {
     let myuls = [];
     let hongs = [];
     // 장착 슬롯(index)과 보석 효과 추출 (효과에 따라 멸화, 홍염 구분)
+    if (profile.GemSkillEffect == undefined) {
+        return null;
+    }
     profile.GemSkillEffect.map((element) => {
-        let index = element.EquipGemSlotIndex;
-        let desc = element.SkillDesc.toLowerCase();;
+        if (element != undefined) {
+            let index = element.EquipGemSlotIndex;
+            let desc = element.SkillDesc.toLowerCase();;
 
-        if (desc.slice(-2) === '증가') {
-            myuls.push({index:index, desc:desc});
-        } else if (desc.slice(-2) === '감소') {
-            hongs.push({index:index, desc:desc});
+            if (desc.slice(-2) === '증가') {
+                myuls.push({index:index, desc:desc});
+            } else if (desc.slice(-2) === '감소') {
+                hongs.push({index:index, desc:desc});
+            }
         }
     });
     // profile에서 사용할 key값을 html에서 추출
     let dataItems = [];
     $('.jewel__wrap').children('span').map((i, element) => {
-        dataItems.push($(element).attr('data-item'));
+        if (element != undefined) {
+            dataItems.push($(element).attr('data-item'));
+        }
     });
     // profile에서 iconPath와 보석레벨 정보 추출
     myuls.map((myul) => {
@@ -183,30 +212,44 @@ function ParseCard(cardSet) {
 }
 
 router.get('/profile/:nickname', (req, res) => {
+
     let url = 'https://lostark.game.onstove.com/Profile/Character/' + encodeURI(req.params.nickname);
     let profile;
     let data = {
-        Level:"", 
-        Ability:"", 
-        Engrave:"", 
-        Equipment:"", 
-        Jewel:"", 
-        Card:""
+        Name:"",
+        Level:{expedition:0, battle:0, item:0}, 
+        Ability:{basic:{attack:0, engrave:0, maxHP:0}, battle:{치명:0, 특화:0, 신속:0, 제압:0, 인내:0, 숙련:0}}, 
+        Engrave:[], 
+        Equipment:{equip:[], accessory:[], stone:{name:"", baseHP:"", bonusHP:"", engrave:"", iconPath:""}, bracelet:{name:"", effect:"", iconPath:""}}, 
+        Jewel:[], 
+        Card:[]
     };
 
     axios.get(url).then((result) => {
         let html = result.data;
+        let $ = cheerio.load(html);
+        let find = $($('.profile-attention').children('span')[1]).text();
 
-        profile = GetProfile(html);
+        if (find == '캐릭터명을 확인해주세요.') {
+            data.Name = '존재하지 않는 캐릭터명입니다.';
+            res.send(data);
+        } else {
+            data.Name = req.params.nickname;
+            profile = GetProfile(html);
+            
+            // DEBUG
+            fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
 
-        data.Level = ParseLevel(html);
-        data.Ability = ParseAbility(html);
-        data.Engrave = ParseEngrave(html);
-        data.Equipment = ParseEquipment(html, profile.Equip);
-        data.Jewel = ParseJewel(html, profile);
-        data.Card = ParseCard(profile.CardSet);
-
-        res.send(data);
+            data.Level = ParseLevel(html);
+            data.Ability = ParseAbility(html);
+            data.Engrave = ParseEngrave(html);
+            if (profile != null) {
+                data.Equipment = ParseEquipment(html, profile.Equip);
+                data.Jewel = ParseJewel(html, profile);
+                data.Card = ParseCard(profile.CardSet);
+            }
+            res.send(data);
+        }
     });
 });
 
