@@ -1,17 +1,16 @@
 {
   "files": {
-    "main.css": "/static/css/main.15cf69ab.css",
-    "main.js": "/static/js/main.8794af66.js",
-    "static/js/377.e0aaa300.chunk.js": "/static/js/377.e0aaa300.chunk.js",
-    "service-worker.js": "/service-worker.js",
-    "static/media/logo.svg": "/static/media/logo.103b5fa18196d5665a7e12318285c916.svg",
-    "index.html": "/index.html",
-    "main.15cf69ab.css.map": "/static/css/main.15cf69ab.css.map",
-    "main.8794af66.js.map": "/static/js/main.8794af66.js.map",
-    "377.e0aaa300.chunk.js.map": "/static/js/377.e0aaa300.chunk.js.map"
+    "main.css": "/Lostark_Helper/client/build/static/css/main.0971cb54.css",
+    "main.js": "/Lostark_Helper/client/build/static/js/main.b979b48d.js",
+    "static/js/377.e0aaa300.chunk.js": "/Lostark_Helper/client/build/static/js/377.e0aaa300.chunk.js",
+    "service-worker.js": "/Lostark_Helper/client/build/service-worker.js",
+    "index.html": "/Lostark_Helper/client/build/index.html",
+    "main.0971cb54.css.map": "/Lostark_Helper/client/build/static/css/main.0971cb54.css.map",
+    "main.b979b48d.js.map": "/Lostark_Helper/client/build/static/js/main.b979b48d.js.map",
+    "377.e0aaa300.chunk.js.map": "/Lostark_Helper/client/build/static/js/377.e0aaa300.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.15cf69ab.css",
-    "static/js/main.8794af66.js"
+    "static/css/main.0971cb54.css",
+    "static/js/main.b979b48d.js"
   ]
 }
