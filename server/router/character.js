@@ -135,10 +135,19 @@ function ParseEquipment(html, equip) {
         }
         // 팔찌
         else if (itemCode === 26) {
-            let brc = {name:"", effect:"", iconPath:""};
+            let brc = {name:"", effect:[], iconPath:""};
 
             brc.name = equip[item].Element_000.value.toLowerCase();
-            brc.effect = equip[item].Element_004.value.Element_001.toLowerCase();
+
+            // effect parsing - img태그 제거
+            let effs = equip[item].Element_004.value.Element_001.toLowerCase();
+            effs = effs.split(/<img.*?>|<\/img>|<br>/);
+            effs.map((e) => {
+                if (e != '') {
+                    brc.effect.push(e);
+                    console.log(e);
+                }
+            });
             brc.iconPath = 'https://cdn-lostark.game.onstove.com/' + equip[item].Element_001.value.slotData.iconPath;
             equipmentData.bracelet = brc;
         }
@@ -212,45 +221,46 @@ function ParseCard(cardSet) {
 }
 
 router.get('/profile/:nickname', (req, res) => {
+    if (req.params.nickname != null) {
+        let url = 'https://lostark.game.onstove.com/Profile/Character/' + encodeURI(req.params.nickname);
+        let profile;
+        let data = {
+            Name:"",
+            Level:{expedition:0, battle:0, item:0}, 
+            Ability:{basic:{attack:0, engrave:0, maxHP:0}, battle:{치명:0, 특화:0, 신속:0, 제압:0, 인내:0, 숙련:0}}, 
+            Engrave:[], 
+            Equipment:{equip:[], accessory:[], stone:{name:"", baseHP:"", bonusHP:"", engrave:"", iconPath:""}, bracelet:{name:"", effect:"", iconPath:""}}, 
+            Jewel:[], 
+            Card:[]
+        };
 
-    let url = 'https://lostark.game.onstove.com/Profile/Character/' + encodeURI(req.params.nickname);
-    let profile;
-    let data = {
-        Name:"",
-        Level:{expedition:0, battle:0, item:0}, 
-        Ability:{basic:{attack:0, engrave:0, maxHP:0}, battle:{치명:0, 특화:0, 신속:0, 제압:0, 인내:0, 숙련:0}}, 
-        Engrave:[], 
-        Equipment:{equip:[], accessory:[], stone:{name:"", baseHP:"", bonusHP:"", engrave:"", iconPath:""}, bracelet:{name:"", effect:"", iconPath:""}}, 
-        Jewel:[], 
-        Card:[]
-    };
+        axios.get(url).then((result) => {
+            let html = result.data;
+            let $ = cheerio.load(html);
+            let find = $($('.profile-attention').children('span')[1]).text();
 
-    axios.get(url).then((result) => {
-        let html = result.data;
-        let $ = cheerio.load(html);
-        let find = $($('.profile-attention').children('span')[1]).text();
+            if (find == '캐릭터명을 확인해주세요.') {
+                data.Name = '존재하지 않는 캐릭터명입니다.';
+                res.send(data);
+            } else {
+                data.Name = req.params.nickname;
+                profile = GetProfile(html);
+                
+                // DEBUG
+                fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
 
-        if (find == '캐릭터명을 확인해주세요.') {
-            data.Name = '존재하지 않는 캐릭터명입니다.';
-            res.send(data);
-        } else {
-            data.Name = req.params.nickname;
-            profile = GetProfile(html);
-            
-            // DEBUG
-            fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
-
-            data.Level = ParseLevel(html);
-            data.Ability = ParseAbility(html);
-            data.Engrave = ParseEngrave(html);
-            if (profile != null) {
-                data.Equipment = ParseEquipment(html, profile.Equip);
-                data.Jewel = ParseJewel(html, profile);
-                data.Card = ParseCard(profile.CardSet);
+                data.Level = ParseLevel(html);
+                data.Ability = ParseAbility(html);
+                data.Engrave = ParseEngrave(html);
+                if (profile != null) {
+                    data.Equipment = ParseEquipment(html, profile.Equip);
+                    data.Jewel = ParseJewel(html, profile);
+                    data.Card = ParseCard(profile.CardSet);
+                }
+                res.send(data);
             }
-            res.send(data);
-        }
-    });
+        });
+    }
 });
 
 router.get('/diff/:nickname1/:nickname2', (req, res) => {
