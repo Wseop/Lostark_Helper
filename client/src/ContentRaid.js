@@ -34,13 +34,13 @@ function AbrelshudContent(props) {
 
     if (props.gate == 5) {
         return (
-            <div className="mt-5">
+            <div className="container mt-5">
                 <img src={process.env.PUBLIC_URL + "/img/abrelshud_gate5.png"} />
             </div>
         );
     } else if (props.gate == 6) {
         return (
-            <div className="mt-5">
+            <div className="container mt-5">
                 <Container>
                     <Row>
                         <Col>
