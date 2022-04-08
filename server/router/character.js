@@ -22,7 +22,7 @@ function GetProfile(html) {
     profile = $('script')[2].children[0].data.split('$.Profile = ')[1].split(';')[0];
 
     // DEBUG
-    fs.writeFileSync('../../temp/profile.json', profile, 'utf-8');
+    // fs.writeFileSync('../../temp/profile.json', profile, 'utf-8');
 
     return JSON.parse(profile);
 }
@@ -145,7 +145,6 @@ function ParseEquipment(html, equip) {
             effs.map((e) => {
                 if (e != '') {
                     brc.effect.push(e);
-                    console.log(e);
                 }
             });
             brc.iconPath = 'https://cdn-lostark.game.onstove.com/' + equip[item].Element_001.value.slotData.iconPath;
@@ -247,7 +246,7 @@ router.get('/profile/:nickname', (req, res) => {
                 profile = GetProfile(html);
                 
                 // DEBUG
-                fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
+                // fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
 
                 data.Level = ParseLevel(html);
                 data.Ability = ParseAbility(html);

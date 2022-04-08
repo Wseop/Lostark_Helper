@@ -143,11 +143,12 @@ function Equipment(props) {
                             </Stack>
                         }
                         {
+                            props.equip.Name === '' ? null :
                             <Stack direction="horizontal" gap={3} className="border border-secondary rounded-3 p-1">
                                 <img className="border border-secondary rounded-3" src={props.equip.bracelet.iconPath} width="60px"/>
                                 <Stack>
                                     {
-                                        props.equip.bracelet.effect === undefined ? null :
+                                        props.equip.bracelet.effect.length === 0 ? null :
                                         props.equip.bracelet.effect.map((e, i) => {
                                             return (
                                                 <div key={i} className="text-light" dangerouslySetInnerHTML={{__html:e}}></div>
@@ -224,7 +225,7 @@ function CardEffect(props) {
 
 function Profile() {
     let target = null;
-    const [profile, setProfile] = useState(null);
+    const [profile, setProfile] = useState({Name:''});
 
     function Search() {
         axios.get('http://localhost:8942/character/profile/' + target)
@@ -254,7 +255,9 @@ function Profile() {
             </Container>
             <Container>
                 {
-                    profile == null ? null : (
+                    profile.Name === '' ? null : 
+                        profile.Name === '존재하지 않는 캐릭터명입니다.' ? profile.Name :
+                    (
                         <Container className="bg-dark">
                             <Row>
                                 <Col>
