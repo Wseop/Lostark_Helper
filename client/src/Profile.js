@@ -136,19 +136,19 @@ function Equipment(props) {
                             })
                         }
                         {
-                            props.equip.stone === null ? null :
+                            props.equip.stone == null ? null :
                             <Stack direction="horizontal" gap={3} className="border border-secondary rounded-3 p-1">
                                 <img className="border border-secondary rounded-3" src={props.equip.stone.iconPath} width="60px"/>
                                 <div className="text-light mx-auto" dangerouslySetInnerHTML={{__html:props.equip.stone.engrave}} ></div>
                             </Stack>
                         }
                         {
-                            props.equip.Name === '' ? null :
+                            props.equip.bracelet == null ? null :
                             <Stack direction="horizontal" gap={3} className="border border-secondary rounded-3 p-1">
                                 <img className="border border-secondary rounded-3" src={props.equip.bracelet.iconPath} width="60px"/>
                                 <Stack>
                                     {
-                                        props.equip.bracelet.effect.length === 0 ? null :
+                                        props.equip.bracelet.effect === undefined ? null :
                                         props.equip.bracelet.effect.map((e, i) => {
                                             return (
                                                 <div key={i} className="text-light" dangerouslySetInnerHTML={{__html:e}}></div>

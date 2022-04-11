@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
 const cheerio = require('cheerio');
 const axios = require('axios');
 
@@ -228,7 +227,7 @@ router.get('/profile/:nickname', (req, res) => {
             Level:{expedition:0, battle:0, item:0}, 
             Ability:{basic:{attack:0, engrave:0, maxHP:0}, battle:{치명:0, 특화:0, 신속:0, 제압:0, 인내:0, 숙련:0}}, 
             Engrave:[], 
-            Equipment:{equip:[], accessory:[], stone:{name:"", baseHP:"", bonusHP:"", engrave:"", iconPath:""}, bracelet:{name:"", effect:"", iconPath:""}}, 
+            Equipment:{equip:[], accessory:[], stone:{name:"", baseHP:"", bonusHP:"", engrave:"", iconPath:""}, bracelet:{name:"", effect:[], iconPath:""}}, 
             Jewel:[], 
             Card:[]
         };
