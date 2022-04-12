@@ -119,16 +119,15 @@ async function GetPrice(itemName) {
 
     const content = await page.content();
     const $ = cheerio.load(content);
-
     let result = {};
-    result['imgSrc'] = $('#tbodyItemList > tr > td:nth-child(1) > div > span.slot > img').attr('src');
-    result['name'] = $('#tbodyItemList > tr > td:nth-child(1) > div > span.name').text();
-    result['price'] = $('#tbodyItemList > tr > td:nth-child(4) > div > em').text().trim();
+    result['imgSrc'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(1) > div > span.slot > img').attr('src');
+    result['name'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(1) > div > span.name').text();
+    result['price'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(4) > div > em').text().trim();
     return result;
 }
 
 // 경매장 데이터 전달
-router.get('/market', (req, res) => {
+router.get('/auction', (req, res) => {
     (async() => {
         let items = req.query;
 
@@ -141,7 +140,7 @@ router.get('/market', (req, res) => {
 });
 
 // 거래소 데이터 전달
-router.get('/auction', (req, res) => {
+router.get('/market', (req, res) => {
     (async() => {
         let items = req.query;
 
@@ -169,9 +168,9 @@ router.get('/jewel', (req, res) => {
     })();
 });
 // DEBUG
-router.get('/esther', (req, res) => {
+router.get('/markettest', (req, res) => {
     (async() => {
-        res.send(await GetPrice('에스더의 기운'));
+        res.send(await GetPrice('빛나는 정령의 회복약'));
     })();
 });
 
