@@ -127,6 +127,33 @@ async function GetPrice(itemName) {
     return result;
 }
 
+// 경매장 데이터 전달
+router.get('/market', (req, res) => {
+    (async() => {
+        let items = req.query;
+
+        for (let item of items) {
+            let result = await GetLowPrice(item);
+            items.push(result);
+        }
+        res.send(items);
+    })();
+});
+
+// 거래소 데이터 전달
+router.get('/auction', (req, res) => {
+    (async() => {
+        let items = req.query;
+
+        for (let item of items) {
+            let result = await GetPrice(item);
+            items.push(result);
+        }
+        res.send(items);
+    })();
+});
+
+// DEBUG
 router.get('/jewel', (req, res) => {
     let jewels = [
         '10레벨 멸화', '10레벨 홍염'
@@ -141,7 +168,7 @@ router.get('/jewel', (req, res) => {
         res.send(results);
     })();
 });
-
+// DEBUG
 router.get('/esther', (req, res) => {
     (async() => {
         res.send(await GetPrice('에스더의 기운'));
