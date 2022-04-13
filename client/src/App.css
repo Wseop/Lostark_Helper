@@ -40,3 +40,28 @@
 body {
   font-family: 'nanumsquare';
 }
+
+.data-grade-0 {
+  color: black;
+}
+.data-grade-1 {
+  color: #6fc300;
+}
+.data-grade-2 {
+  color: #00b5ff;
+}
+.data-grade-3 {
+  color: #bf00fe;
+}
+.data-grade-4 {
+  color: #f39303;
+}
+.data-grade-5 {
+  color: #ff6000;
+}
+.data-grade-6 {
+  color: #c9a472;
+}
+.data-grade-7 {
+  color: #3cf2e6;
+}

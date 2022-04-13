@@ -2,13 +2,15 @@ import { React, useState, useEffect } from 'react';
 import axios from 'axios';
 import { Container, Spinner, Table, Tabs, Tab, Row, Col } from 'react-bootstrap';
 
+import './App.css';
+
 function TableHead() {
     return (
         <thead>
             <tr>
-                <th width="50px">아이템</th>
+                <th className="align-middle" width="50px">아이템</th>
                 <th width="200px"></th>
-                <th width="70px">현재 최저가</th>
+                <th className="align-middle" width="70px">현재 최저가</th>
             </tr>
         </thead>
     )
@@ -20,7 +22,7 @@ function TableRow(props) {
     return (
         <tr>
             <td><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></td>
-            <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="200px"> {item.name}</td>
+            <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="200px"><span className={"data-grade-" + item.dataGrade}>{item.name}</span></td>
             <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="70px">{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} /></td>
         </tr>
     )
@@ -54,7 +56,7 @@ function ItemInfo(props) {
         return (
             <Table className="mt-3 mx-auto" hover variant="dark" width="350px">
                 <TableHead />
-                    <tbody className="table-secondary">
+                    <tbody className="table-light">
                         {
                             itemList.map((item) => {
                                 return (
@@ -122,7 +124,7 @@ function HighPrice() {
         return (
             <Table className="mt-3 w-75 mx-auto" hover variant="dark">
                 <TableHead />
-                <tbody className="table-secondary">
+                <tbody className="table-light">
                     {
                         itemsAuction.map((item) => {
                             return (
@@ -179,7 +181,7 @@ function Exchange() {
     return (
         <Container>
             <Tabs defaultActiveKey="에스더" className="mt-3 fs-7 text-dark fw-bold">
-                <Tab eventKey="에스더" title="에스더 / 10멸">
+                <Tab eventKey="에스더" title="에스더 / 10렙 보석">
                     <HighPrice />
                 </Tab>
                 <Tab eventKey="강화 재료" title="강화 재료">
