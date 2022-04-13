@@ -7,7 +7,6 @@ const cheerio = require('cheerio');
 require('dotenv').config();
 
 let browser;
-let page;
 let db;
 let loginInfo;
 
@@ -28,38 +27,32 @@ if (loginInfo == null) {
 
             //browser = await puppeteer.launch({headless:false});
             browser = await puppeteer.launch();
-            page = await browser.newPage();
+            let page = await browser.newPage();
 
             // DEBUG - set viewport
             await page.setViewport({
                 width: 1920,
                 height: 1080
             });
+
+            await page.goto('https://member.onstove.com/auth/login?inflow_path=lost_ark&game_no=45&redirect_url=https%3a%2f%2flostark.game.onstove.com%2fmarket');
+            await page.focus('#user_id');
+            await page.keyboard.type(loginInfo.email);
+            await page.focus('#user_pwd');
+            await page.keyboard.type(loginInfo.pw);
+            await page.click('#idLogin > div.row.grid.el-actions > button');
+            // 로그인 버튼 클릭 후 완료될 때 까지 대기!
+            await page.waitForNavigation();
+
+            console.log('[EXCHANGE] : exchange login success');
         })();
     });
 }
 
-router.get('/', (req, res) => {
-    (async() => {
-        await page.goto('https://member.onstove.com/auth/login?inflow_path=lost_ark&game_no=45&redirect_url=https%3a%2f%2flostark.game.onstove.com%2fmarket');
-        await page.focus('#user_id');
-        await page.keyboard.type(loginInfo.email);
-        await page.focus('#user_pwd');
-        await page.keyboard.type(loginInfo.pw);
-        await page.click('#idLogin > div.row.grid.el-actions > button');
-        // 로그인 버튼 클릭 후 완료될 때 까지 대기!
-        await page.waitForNavigation();
-
-        // screenshot
-        //await page.screenshot({ path: '../../temp/test.png' });
-
-        // TODO : 거래소 조회 정보 전달
-        res.send('end');
-    })();
-});
-
 // 경매장에서 item의 최저가 탐색
 async function GetLowPrice(itemName) {
+    let page = await browser.newPage();
+
     await page.goto('https://lostark.game.onstove.com/Auction');
     await page.waitForSelector('#txtItemName');
     await page.focus('#txtItemName');
@@ -84,6 +77,8 @@ async function GetLowPrice(itemName) {
                 result['imgSrc'] = $('#auctionListTbody > tr:nth-child(' + (j + 1) + ') > td:nth-child(1) > div.grade > span.slot > img').attr('src');
                 result['name'] = $('#auctionListTbody > tr:nth-child(' + (j + 1) + ') > td:nth-child(1) > div.grade > span.name').text();
                 result['price'] = price;
+
+                await page.close();
                 return result;
             }
         }
@@ -99,6 +94,7 @@ async function GetLowPrice(itemName) {
                 await page.click(selector);
             } else {
                 // 검색 결과에 최저가 즉구가 없는 경우
+                await page.close();
                 return null;
             }
         }
@@ -107,48 +103,55 @@ async function GetLowPrice(itemName) {
 }
 
 // 거래소에서 item 최저가 탐색
-async function GetPrice(itemName) {
-    await page.goto('https://lostark.game.onstove.com/Market');
+async function GetPrice(page, itemName) {
     await page.waitForSelector('#txtItemName');
     await page.focus('#txtItemName');
     await page.keyboard.type(itemName);
     await page.click('#lostark-wrapper > div > main > div > div.deal > div.deal-contents > form > fieldset > div > div.bt > button.button.button--deal-submit');
     await page.waitForSelector('.price');
-    await page.click('#itemList > thead > tr > th:nth-child(5)');
-    await page.waitForTimeout(300);
-
+    
     const content = await page.content();
     const $ = cheerio.load(content);
     let result = {};
     result['imgSrc'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(1) > div > span.slot > img').attr('src');
     result['name'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(1) > div > span.name').text();
     result['price'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(4) > div > em').text().trim();
+
+    await page.click('#lostark-wrapper > div > main > div > div.deal-tab > a.tab__item--active');
+    
     return result;
 }
 
 // 경매장 데이터 전달
 router.get('/auction', (req, res) => {
     (async() => {
-        let items = req.query;
+        let items = req.query.items;
+        let results = [];
 
         for (let item of items) {
             let result = await GetLowPrice(item);
-            items.push(result);
+            results.push(result);
         }
-        res.send(items);
+        res.send(results);
     })();
 });
 
 // 거래소 데이터 전달
 router.get('/market', (req, res) => {
     (async() => {
-        let items = req.query;
+        let items = req.query.items;
+        let results = [];
+        let page = await browser.newPage();
+
+        await page.goto('https://lostark.game.onstove.com/Market');
 
         for (let item of items) {
-            let result = await GetPrice(item);
-            items.push(result);
+            let result = await GetPrice(page, item);
+            results.push(result);
         }
-        res.send(items);
+
+        await page.close();
+        res.send(results);
     })();
 });
 
