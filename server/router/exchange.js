@@ -50,10 +50,7 @@ if (loginInfo == null) {
 }
 
 // 경매장에서 item의 최저가 탐색
-async function GetLowPrice(itemName) {
-    let page = await browser.newPage();
-
-    await page.goto('https://lostark.game.onstove.com/Auction');
+async function GetLowPrice(page, itemName) {
     await page.waitForSelector('#txtItemName');
     await page.focus('#txtItemName');
     await page.keyboard.type(itemName);
@@ -77,8 +74,10 @@ async function GetLowPrice(itemName) {
                 result['imgSrc'] = $('#auctionListTbody > tr:nth-child(' + (j + 1) + ') > td:nth-child(1) > div.grade > span.slot > img').attr('src');
                 result['name'] = $('#auctionListTbody > tr:nth-child(' + (j + 1) + ') > td:nth-child(1) > div.grade > span.name').text();
                 result['price'] = price;
+                result['dataGrade'] = $('#auctionListTbody > tr:nth-child(' + (j + 1) + ') > td:nth-child(1) > div.grade').attr('data-grade');
 
-                await page.close();
+                await page.click('#lostark-wrapper > div > main > div > div.deal-tab > a.tab__item--active');
+
                 return result;
             }
         }
@@ -94,7 +93,8 @@ async function GetLowPrice(itemName) {
                 await page.click(selector);
             } else {
                 // 검색 결과에 최저가 즉구가 없는 경우
-                await page.close();
+                await page.click('#lostark-wrapper > div > main > div > div.deal-tab > a.tab__item--active');
+
                 return null;
             }
         }
@@ -103,21 +103,45 @@ async function GetLowPrice(itemName) {
 }
 
 // 거래소에서 item 최저가 탐색
-async function GetPrice(page, itemName) {
+async function GetPrice(itemName) {
+    let page = await browser.newPage();
+
+    await page.setRequestInterception(true);
+    page.on('request', (request) => {
+        switch (request.resourceType()) {
+            case 'stylesheet':
+            case 'font':
+            case 'image':
+                request.abort();
+                break;
+            default:
+                request.continue();
+                break;
+        }
+    });
+
+    // TODO
+    // Market 검색은 아래 경로 활용하도록 코드 수정
+    // https://lostark.game.onstove.com/Market/List_v2
+
+    await page.goto('https://lostark.game.onstove.com/Market');
+
     await page.waitForSelector('#txtItemName');
     await page.focus('#txtItemName');
     await page.keyboard.type(itemName);
     await page.click('#lostark-wrapper > div > main > div > div.deal > div.deal-contents > form > fieldset > div > div.bt > button.button.button--deal-submit');
     await page.waitForSelector('.price');
-    
+
     const content = await page.content();
     const $ = cheerio.load(content);
     let result = {};
+
     result['imgSrc'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(1) > div > span.slot > img').attr('src');
     result['name'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(1) > div > span.name').text();
     result['price'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(4) > div > em').text().trim();
+    result['dataGrade'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(1) > div').attr('data-grade');
 
-    await page.click('#lostark-wrapper > div > main > div > div.deal-tab > a.tab__item--active');
+    await page.close();
     
     return result;
 }
@@ -127,26 +151,32 @@ router.get('/auction', (req, res) => {
     (async() => {
         let items = req.query.items;
         let results = [];
-
-        for (let item of items) {
-            let result = await GetLowPrice(item);
-            results.push(result);
-        }
-        res.send(results);
-    })();
-});
-
-// 거래소 데이터 전달
-router.get('/market', (req, res) => {
-    (async() => {
-        let items = req.query.items;
-        let results = [];
         let page = await browser.newPage();
 
-        await page.goto('https://lostark.game.onstove.com/Market');
+        // 불필요한 리소스 차단
+        // 참고) https://gracefullight.dev/2019/07/29/increase-puppeteer-crawling-speed/
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            switch (request.resourceType()) {
+                case 'stylesheet':
+                case 'font':
+                case 'image':
+                    request.abort();
+                    break;
+                default:
+                    request.continue();
+                    break;
+            }
+        });
+
+        // TODO
+        // Auction 검색은 아래 경로 활용하도록 코드 수정
+        // https://lostark.game.onstove.com/Auction/GetAuctionListV2/
+
+        await page.goto('https://lostark.game.onstove.com/Auction');
 
         for (let item of items) {
-            let result = await GetPrice(page, item);
+            let result = await GetLowPrice(page, item);
             results.push(result);
         }
 
@@ -155,25 +185,40 @@ router.get('/market', (req, res) => {
     })();
 });
 
-// DEBUG
-router.get('/jewel', (req, res) => {
-    let jewels = [
-        '10레벨 멸화', '10레벨 홍염'
-    ];
-    let results = [];
+// 병렬 처리
+// 참고) https://jun-choi-4928.medium.com/puppeteer-%ED%81%AC%EB%A1%A4%EB%A7%81-%EB%B9%84%EB%8F%99%EA%B8%B0-%EB%B3%91%EB%A0%AC%EC%B2%98%EB%A6%AC%ED%95%98%EA%B8%B0-4bee1e5af998
+function arrayToChunks (array, CHUNK_SIZE) {
+    const results = [];
+    let start = 0;
 
+    while (start < array.length) {
+        results.push(array.slice(start, start + CHUNK_SIZE));
+        start += CHUNK_SIZE;
+    }
+
+    return results;
+}
+
+// 거래소 데이터 전달
+router.get('/market', (req, res) => {
     (async() => {
-        for (let jewel of jewels) {
-            let result = await GetLowPrice(jewel);
-            results.push(result);
+        let items = req.query.items;
+        let results = [];
+        const CHUNK_SIZE = 4;
+        const chunkedItems = arrayToChunks(items, CHUNK_SIZE);
+
+        // 병렬 처리
+        // 참고) https://jun-choi-4928.medium.com/puppeteer-%ED%81%AC%EB%A1%A4%EB%A7%81-%EB%B9%84%EB%8F%99%EA%B8%B0-%EB%B3%91%EB%A0%AC%EC%B2%98%EB%A6%AC%ED%95%98%EA%B8%B0-4bee1e5af998
+        for (chunk of chunkedItems) {
+            const resultPromises = chunk.map((item) => GetPrice(item));
+            const resolved = await Promise.all(resultPromises);
+            
+            resolved.forEach((result) => {
+                result && results.push(result);
+            });
         }
+
         res.send(results);
-    })();
-});
-// DEBUG
-router.get('/markettest', (req, res) => {
-    (async() => {
-        res.send(await GetPrice('빛나는 정령의 회복약'));
     })();
 });
 
