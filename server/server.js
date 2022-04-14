@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 
 require('dotenv').config();
+require('events').EventEmitter.defaultMaxListeners = 0;
 
 // Error handle - Access-Control-Allow-Origin
 app.use((req, res, next) => { 
