@@ -9,7 +9,7 @@ import Exchange from './Exchange.js';
 
 function App() {
   return (
-    <div className="container mt-3">
+    <div className="container">
       <div className="App">
           <Navigation />
 

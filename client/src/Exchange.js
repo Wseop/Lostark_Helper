@@ -4,13 +4,21 @@ import { Container, Spinner, Table, Tabs, Tab, Row, Col } from 'react-bootstrap'
 
 import './App.css';
 
-function TableHead() {
+function TableHead(props) {
+    function ThPrice() {
+        return (
+            props.sortDesc == null ? <th className="align-middle" width="70px" onClick={() => {props.clickSort()}} style={{cursor:"pointer"}}>현재 최저가</th> :
+            props.sortDesc === false ? <th className="align-middle" width="70px" onClick={() => {props.clickSort()}} style={{cursor:"pointer"}}>현재 최저가 ▲</th> :
+            <th className="align-middle" width="70px" onClick={() => {props.clickSort()}} style={{cursor:"pointer"}}>현재 최저가 ▼</th>
+        )
+    }
+
     return (
         <thead>
             <tr>
                 <th className="align-middle" width="50px">아이템</th>
                 <th width="200px"></th>
-                <th className="align-middle" width="70px">현재 최저가</th>
+                <ThPrice />
             </tr>
         </thead>
     )
@@ -29,8 +37,9 @@ function TableRow(props) {
 }
 
 function ItemInfo(props) {
-    let [itemList, setItemList] = useState([]);
-    let [itemLoad, setItemLoad] = useState(false);
+    const [itemList, setItemList] = useState([]);
+    const [itemLoad, setItemLoad] = useState(false);
+    const [sortDesc, setSortDesc] = useState(null);
 
     useEffect(() => {
         axios.get(props.url, {
@@ -51,16 +60,38 @@ function ItemInfo(props) {
             console.log('[ERR] : ' + err);
         })
     }, []);
+    useEffect(() => {
+        let sortedItem = [...itemList];
+
+        if (sortDesc) {
+            sortedItem.sort((a, b) => {
+                return b.price - a.price;
+            });
+        } else {
+            sortedItem.sort((a, b) => {
+                return a.price - b.price;
+            });
+        }
+        setItemList([...sortedItem]);
+    }, [sortDesc]);
+
+    function ClickSort() {
+        if (sortDesc === false) {
+            setSortDesc(true);
+        } else {
+            setSortDesc(false);
+        }
+    }
 
     if (itemLoad) {
         return (
             <Table className="mt-3 mx-auto" hover variant="dark" width="350px">
-                <TableHead />
+                <TableHead sortDesc={sortDesc} clickSort={ClickSort}/>
                     <tbody className="table-light">
                         {
                             itemList.map((item) => {
                                 return (
-                                    <TableRow key={item.name} item={item} />
+                                    <TableRow item={item} />
                                 )
                             })
                         }
@@ -76,10 +107,10 @@ function ItemInfo(props) {
 }
 
 function HighPrice() {
-    let [itemsAuction, setItemsAuction] = useState([]);
-    let [itemsMarket, setItemsMarket] = useState([]);
-    let [auctionLoad, setAuctionLoad] = useState(false);
-    let [marketLoad, setMarketLoad] = useState(false);
+    const [itemsAuction, setItemsAuction] = useState([]);
+    const [itemsMarket, setItemsMarket] = useState([]);
+    const [auctionLoad, setAuctionLoad] = useState(false);
+    const [marketLoad, setMarketLoad] = useState(false);
 
     useEffect(() => {
         axios.get('http://localhost:8942/exchange/auction', {
@@ -128,14 +159,14 @@ function HighPrice() {
                     {
                         itemsAuction.map((item) => {
                             return (
-                                <TableRow key={item.name} item={item} />
+                                <TableRow item={item} />
                             )
                         })
                     }
                     {
                         itemsMarket.map((item) => {
                             return (
-                                <TableRow key={item.name} item={item} />
+                                <TableRow item={item} />
                             )
                         })
                     }
@@ -160,26 +191,20 @@ function Exchange() {
     let health = [
         '회복약', '고급 회복약', '정령의 회복약', '빛나는 정령의 회복약'
     ];
-    let bomb = [
-        '성스러운 폭탄', '부식 폭탄', '수면 폭탄', '파괴 폭탄' 
+    let battle = [
+        '성스러운 폭탄', '부식 폭탄', '수면 폭탄', '파괴 폭탄', '섬광 수류탄', '냉기 수류탄', '암흑 수류탄', '점토 수류탄', '화염 수류탄', '회오리 수류탄'
     ];
-    let bombPlus = [
-        '빛나는 성스러운 폭탄', '빛나는 부식 폭탄', '빛나는 수면 폭탄', '빛나는 파괴 폭탄'
-    ];
-    let grenade = [
-        '섬광 수류탄', '냉기 수류탄', '암흑 수류탄', '점토 수류탄', '화염 수류탄', '회오리 수류탄', 
-    ];
-    let grenadePlus = [
-        '빛나는 섬광 수류탄', '빛나는 냉기 수류탄', '빛나는 암흑 수류탄', '빛나는 점토 수류탄', '빛나는 화염 수류탄', '빛나는 회오리 수류탄'
+    let battlePlus = [
+        '빛나는 성스러운 폭탄', '빛나는 부식 폭탄', '빛나는 수면 폭탄', '빛나는 파괴 폭탄', '빛나는 섬광 수류탄', '빛나는 냉기 수류탄', '빛나는 암흑 수류탄', '빛나는 점토 수류탄', '빛나는 화염 수류탄', '빛나는 회오리 수류탄'
     ];
     let etc = [
         '신호탄', '성스러운 부적', '빛나는 성스러운 부적', '만능 물약', '빛나는 만능 물약', '페로몬 폭탄', '시간 정지 물약', '각성 물약', '아드로핀 물약', '신속 로브', '빛나는 신속 로브'
     ];
-    let marketUrl = 'http://localhost:8942/exchange/market';
-    let auctionUrl = 'http://localhost:8942/exchange/auction';
+    const marketUrl = 'http://localhost:8942/exchange/market';
+    const auctionUrl = 'http://localhost:8942/exchange/auction';
 
     return (
-        <Container>
+        <Container className="mt-3">
             <Tabs defaultActiveKey="에스더" className="mt-3 fs-7 text-dark fw-bold">
                 <Tab eventKey="에스더" title="에스더 / 10렙 보석">
                     <HighPrice />
@@ -200,10 +225,8 @@ function Exchange() {
                 <Tab eventKey="폭탄 / 수류탄" title="폭탄 / 수류탄">
                     <Container>
                         <Row>
-                            <Col className="p-1"><ItemInfo url={marketUrl} items={bomb}/></Col>
-                            <Col className="p-1"><ItemInfo url={marketUrl} items={bombPlus}/></Col>
-                            <Col className="p-1"><ItemInfo url={marketUrl} items={grenade}/></Col>
-                            <Col className="p-1"><ItemInfo url={marketUrl} items={grenadePlus}/></Col>
+                            <Col><ItemInfo url={marketUrl} items={battle}/></Col>
+                            <Col><ItemInfo url={marketUrl} items={battlePlus}/></Col>
                         </Row>
                     </Container>
                 </Tab>
