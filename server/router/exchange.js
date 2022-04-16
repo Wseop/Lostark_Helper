@@ -78,8 +78,8 @@ async function GetLowPrice(page, itemName) {
 }
 
 // 거래소에서 item 최저가 탐색
-async function GetPrice(page, itemName) {
-    let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=99&pageNo=1&isInit=false&sortType=7&itemName=${itemName}`;
+async function GetPrice(page, itemName, grade) {
+    let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=1&isInit=false&sortType=7&itemName=${itemName}`;
 
     await page.goto(url);
     await page.waitForSelector('#tbodyItemList');
@@ -94,6 +94,44 @@ async function GetPrice(page, itemName) {
     result['dataGrade'] = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(1) > div').attr('data-grade');
     
     return result;
+}
+// 거래소에서 검색 결과로 나온 모든 item들의 최저가 탐색
+async function GetPriceAll(page, itemName, grade) {
+    let results = [];
+    let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=1&isInit=false&sortType=7&itemName=${itemName}`;
+
+    await page.goto(url);
+    await page.waitForSelector('.pagination__last');
+
+    // 탐색해야할 page의 갯수를 구한 뒤 모든 page에 대해서 탐색
+    let content = await page.content();
+    let $ = cheerio.load(content);
+    const pageCount = Number($('.pagination__last').attr('onclick').split(/.*?\(|\)/)[1]);
+    const pageArr = Array.from({length: pageCount}, (v, i) => i + 1);
+
+    for (let pageNo of pageArr) {
+        url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=${pageNo}&isInit=false&sortType=7&itemName=${itemName}`;
+
+        await page.goto(url);
+        await page.waitForSelector('#tbodyItemList');
+
+        content = await page.content();
+        $ = cheerio.load(content);
+        
+        const itemList = $('#tbodyItemList').children();
+        for (let item of itemList) {
+            let result = {};
+            
+            result['imgSrc'] = $(item).find('img').attr('src');
+            result['name'] = $(item).find('.name').text();
+            result['price'] = $($(item).find('.price')[2]).children('em').text();
+            result['dataGrade'] = $(item).find('.grade').attr('data-grade');
+
+            results.push(result);
+        }
+    }
+
+    return results;
 }
 
 // 경매장 데이터 전달
@@ -160,9 +198,83 @@ router.get('/market', (req, res) => {
         let results = [];
 
         for (let item of items) {
-            let result = await GetPrice(page, item);
+            let result = await GetPrice(page, item, 99);
             if (result != null) {
                 results.push(result);
+            }
+        }
+
+        await page.close();
+        await browser.close();
+        res.send(results);
+    })();
+});
+
+// 전설 각인서 - 공용 검색
+router.get('/engravesCommon4', (req, res) => {
+    (async() => {
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        // 불필요한 리소스 차단
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            switch (request.resourceType()) {
+                case 'stylesheet':
+                case 'font':
+                case 'image':
+                    request.abort();
+                    break;
+                default:
+                    request.continue();
+                    break;
+            }
+        });
+        await page.setCookie(COOKIE);
+
+        let engraves = await GetPriceAll(page, '각인서', 4);
+        let results = [];
+
+        for (let engrave of engraves) {
+            if (engrave.name[0] !== '[') {
+                results.push(engrave);
+            }
+        }
+
+        await page.close();
+        await browser.close();
+        res.send(results);
+    })();
+});
+
+// 전설 각인서 - 직업 검색
+router.get('/engravesClass4', (req, res) => {
+    (async() => {
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        // 불필요한 리소스 차단
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            switch (request.resourceType()) {
+                case 'stylesheet':
+                case 'font':
+                case 'image':
+                    request.abort();
+                    break;
+                default:
+                    request.continue();
+                    break;
+            }
+        });
+        await page.setCookie(COOKIE);
+
+        let engraves = await GetPriceAll(page, '각인서', 4);
+        let results = [];
+
+        for (let engrave of engraves) {
+            if (engrave.name[0] === '[') {
+                results.push(engrave);
             }
         }
 

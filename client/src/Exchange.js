@@ -17,7 +17,7 @@ function TableHead(props) {
         <thead>
             <tr>
                 <th className="align-middle" width="50px">아이템</th>
-                <th width="200px"></th>
+                <th width="200px">{props.category}</th>
                 <ThPrice />
             </tr>
         </thead>
@@ -65,11 +65,11 @@ function ItemInfo(props) {
 
         if (sortDesc) {
             sortedItem.sort((a, b) => {
-                return b.price - a.price;
+                return Number(b.price.replace(/,/g, "")) - Number(a.price.replace(/,/g, ""));
             });
         } else {
             sortedItem.sort((a, b) => {
-                return a.price - b.price;
+                return Number(a.price.replace(/,/g, "")) - Number(b.price.replace(/,/g, ""));
             });
         }
         setItemList([...sortedItem]);
@@ -86,7 +86,7 @@ function ItemInfo(props) {
     if (itemLoad) {
         return (
             <Table className="mt-3 mx-auto" hover variant="dark" width="350px">
-                <TableHead sortDesc={sortDesc} clickSort={ClickSort}/>
+                <TableHead category={props.category} sortDesc={sortDesc} clickSort={ClickSort}/>
                     <tbody className="table-light">
                         {
                             itemList.map((item) => {
@@ -134,7 +134,7 @@ function HighPrice() {
     useEffect(() => {
         axios.get('http://localhost:8942/exchange/market', {
             params: {
-                items: ['에스더']
+                items: ['에스더'],
             }
         })
         .then((result) => {
@@ -202,6 +202,8 @@ function Exchange() {
     ];
     const marketUrl = 'http://localhost:8942/exchange/market';
     const auctionUrl = 'http://localhost:8942/exchange/auction';
+    const engraveCommonUrl = 'http://localhost:8942/exchange/engravesCommon4';
+    const engraveClassUrl = 'http://localhost:8942/exchange/engravesClass4';
 
     return (
         <Container className="mt-3">
@@ -225,14 +227,22 @@ function Exchange() {
                 <Tab eventKey="폭탄 / 수류탄" title="폭탄 / 수류탄">
                     <Container>
                         <Row>
-                            <Col><ItemInfo url={marketUrl} items={battle}/></Col>
-                            <Col><ItemInfo url={marketUrl} items={battlePlus}/></Col>
+                            <Col><ItemInfo url={marketUrl} items={battle} category="일반"/></Col>
+                            <Col><ItemInfo url={marketUrl} items={battlePlus} category="빛나는"/></Col>
                         </Row>
                     </Container>
                 </Tab>
-                <Tab eventKey="기타" title="기타">
+                <Tab eventKey="유틸" title="유틸">
                     <Container className="w-75">
                         <ItemInfo url={marketUrl} items={etc}/>
+                    </Container>
+                </Tab>
+                <Tab eventKey="각인서" title="각인서">
+                    <Container>
+                        <Row>
+                            <Col><ItemInfo url={engraveCommonUrl} items={null} category="공용"/></Col>
+                            <Col><ItemInfo url={engraveClassUrl} items={null} category="직업"/></Col>
+                        </Row>
                     </Container>
                 </Tab>
             </Tabs>
