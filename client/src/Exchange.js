@@ -1,6 +1,6 @@
 import { React, useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Spinner, Table, Tabs, Tab, Row, Col } from 'react-bootstrap';
+import { Container, Spinner, Table, Tabs, Tab, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 import './App.css';
 
@@ -29,7 +29,14 @@ function TableRow(props) {
 
     return (
         <tr>
-            <td><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></td>
+            {
+                item.effect == null ? <td><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></td> :
+                <td><OverlayTrigger key="right" placement="right" overlay={
+                    <Tooltip>
+                        <div id="tooltip-content" dangerouslySetInnerHTML={{__html:item.effect}}></div>
+                    </Tooltip>
+                }><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></OverlayTrigger></td>
+            }
             <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="200px"><span className={"data-grade-" + item.dataGrade}>{item.name}</span></td>
             <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="70px">{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} /></td>
         </tr>

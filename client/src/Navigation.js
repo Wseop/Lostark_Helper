@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 function Navigation(props) {
     return (
-        <Navbar className="sticky-top ps-3 pe-3 mb-3" bg="dark" variant="dark">
+        <Navbar className="sticky-top ps-3 pe-3" bg="dark" variant="dark">
           <Navbar.Brand as={Link} to="/">LoaHelper</Navbar.Brand>
           <Nav className="me-auto">
             <Nav.Link href='/exchange'>거래소</Nav.Link>

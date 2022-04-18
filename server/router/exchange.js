@@ -95,10 +95,10 @@ async function GetPrice(page, itemName, grade) {
     
     return result;
 }
-// 거래소에서 검색 결과로 나온 모든 item들의 최저가 탐색
-async function GetPriceAll(page, itemName, grade) {
+// 거래소에서 검색 결과로 나온 모든 각인서들의 최저가 탐색
+async function GetPriceEngraves(page, grade) {
     let results = [];
-    let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=1&isInit=false&sortType=7&itemName=${itemName}`;
+    let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=1&isInit=false&sortType=7&itemName=각인서`;
 
     await page.goto(url);
     await page.waitForSelector('.pagination__last');
@@ -110,7 +110,7 @@ async function GetPriceAll(page, itemName, grade) {
     const pageArr = Array.from({length: pageCount}, (v, i) => i + 1);
 
     for (let pageNo of pageArr) {
-        url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=${pageNo}&isInit=false&sortType=7&itemName=${itemName}`;
+        url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=${pageNo}&isInit=false&sortType=7&itemName=각인서`;
 
         await page.goto(url);
         await page.waitForSelector('#tbodyItemList');
@@ -126,6 +126,11 @@ async function GetPriceAll(page, itemName, grade) {
             result['name'] = $(item).find('.name').text();
             result['price'] = $($(item).find('.price')[2]).children('em').text();
             result['dataGrade'] = $(item).find('.grade').attr('data-grade');
+            
+            // 각인 효과 parsing
+            let itemInfo = $(item).find('.grade > .slot').attr('data-key');
+            itemInfo = JSON.parse(itemInfo);
+            result['effect'] = itemInfo.Element_008.value.Element_001.toLowerCase();
 
             results.push(result);
         }
@@ -232,7 +237,7 @@ router.get('/engravesCommon4', (req, res) => {
         });
         await page.setCookie(COOKIE);
 
-        let engraves = await GetPriceAll(page, '각인서', 4);
+        let engraves = await GetPriceEngraves(page, 4);
         let results = [];
 
         for (let engrave of engraves) {
@@ -269,7 +274,7 @@ router.get('/engravesClass4', (req, res) => {
         });
         await page.setCookie(COOKIE);
 
-        let engraves = await GetPriceAll(page, '각인서', 4);
+        let engraves = await GetPriceEngraves(page, 4);
         let results = [];
 
         for (let engrave of engraves) {
