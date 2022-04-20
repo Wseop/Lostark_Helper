@@ -16,6 +16,8 @@ const character = require('./router/character.js');
 app.use('/character', character);
 const exchange = require('./router/exchange.js');
 app.use('/exchange', exchange);
+const marketPrice = require('./router/marketprice.js');
+app.use('/marketprice', marketPrice);
 
 app.listen(process.env.PORT, () => {
   console.log('listening on ' + process.env.PORT);

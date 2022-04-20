@@ -1,0 +1,11 @@
+[
+    {
+        "type":"market", "name":"에스더", "collection":"price_esther", "grade":99
+    },
+    {
+        "type":"auction", "name":"10레벨 멸화", "collection":"price_10myul"
+    },
+    {
+        "type":"auction", "name":"10레벨 홍염", "collection":"price_10hong"
+    }
+]

@@ -3,7 +3,6 @@
 
 const express = require('express');
 const router = express.Router();
-const MongoClient = require('mongodb').MongoClient;
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 
@@ -15,27 +14,6 @@ const COOKIE = {
     value: process.env.STOVE_COOKIE,
     domain: '.onstove.com'
 };
-let db;
-let loginInfo;
-
-// TODO
-// 쿠키값 SUAT가 갱신되면 DB에 업데이트 하도록 구현? How?
-if (loginInfo == null) {
-    MongoClient.connect(process.env.DB_URL, (err, client) => {
-        if (err) return console.log(err);
-
-        db = client.db('LoaHelper');
-        (async () => {
-            await db.collection('stove_login_info').find().next()
-            .then((res) => {
-                loginInfo = res;
-            })
-            .catch((err) => {
-                return console.log(err);
-            });
-        })();
-    });
-}
 
 // 경매장에서 item의 최저가 탐색
 async function GetLowPrice(page, itemName) {
