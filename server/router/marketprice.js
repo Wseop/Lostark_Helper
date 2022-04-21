@@ -17,7 +17,7 @@ const COOKIE = {
 
 let db;
 const urlAuction = 'https://lostark.game.onstove.com/Auction/GetAuctionListV2?sortOption.Sort=BUY_PRICE&sortOption.IsDesc=false';
-const urlMarket = 'https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&pageNo=1&isInit=false&sortType=7';
+const urlMarket = 'https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&isInit=false&sortType=7';
 const items = JSON.parse(fs.readFileSync(__dirname + '/../data/marketprice.json', 'utf-8'));
 
 if (db == null) {
@@ -31,43 +31,45 @@ if (db == null) {
         const job = schedule.scheduleJob('0 */1 * * *', () => {
             (async() => {
                 const browser = await puppeteer.launch();
-                const page = await browser.newPage();
 
-                await page.setRequestInterception(true);
-                page.on('request', (request) => {
-                    switch (request.resourceType()) {
-                        case 'stylesheet':
-                        case 'font':
-                        case 'image':
-                            request.abort();
-                            break;
-                        default:
-                            request.continue();
-                            break;
-                    }
-                });
-                await page.setCookie(COOKIE);
-
+                // 10렙 보석 + 에스더의 기운
                 for (let item of items) {
-                    let ret = await UpdateLowPrice(page, item);
+                    let ret = await UpdateLowPrice(browser, item);
                     
                     if (ret === false) {
                         console.log(`${item.name} update fail`);
                     }
                 }
+                // 각인서
+                await UpdateEngrave(browser);
 
-                await page.close();
                 await browser.close();
             })();
         });
     });
 }
 
-async function UpdateLowPrice(page, item) {
+async function UpdateLowPrice(browser, item) {
     let price;
 
+    const page = await browser.newPage();
+    await page.setRequestInterception(true);
+    page.on('request', (request) => {
+        switch (request.resourceType()) {
+            case 'stylesheet':
+            case 'font':
+            case 'image':
+                request.abort();
+                break;
+            default:
+                request.continue();
+                break;
+        }
+    });
+    await page.setCookie(COOKIE);
+
     if (item.type === 'market') {
-        await page.goto(`${urlMarket}&grade=${item.grade}&itemName=${item.name}`);
+        await page.goto(`${urlMarket}&pageNo=1&grade=${item.grade}&itemName=${item.name}`);
         await page.waitForSelector('#tbodyItemList');
 
         const content = await page.content();
@@ -107,6 +109,9 @@ async function UpdateLowPrice(page, item) {
             }
         }
     }
+
+    await page.close();
+
     if (price != null) {
         let data = {time : new Date().toLocaleString(), price : price};
         db.collection(item.collection).insertOne(data, (err, res) => {
@@ -120,9 +125,144 @@ async function UpdateLowPrice(page, item) {
     }
 }
 
-router.get('/jewel', (req, res) => {});
-router.get('/esther', (req, res) => {});
-router.get('/engraveCommon', (req, res) => {});
-router.get('/engraveClass', (req, res) => {});
+async function UpdateEngrave(browser) {
+    let url = `${urlMarket}&pageNo=1&grade=4&itemName=각인서`;
+    let commons = [];
+    let classes = [];
+
+    const page = await browser.newPage();
+    await page.setRequestInterception(true);
+    page.on('request', (request) => {
+        switch (request.resourceType()) {
+            case 'stylesheet':
+            case 'font':
+            case 'image':
+                request.abort();
+                break;
+            default:
+                request.continue();
+                break;
+        }
+    });
+    await page.setCookie(COOKIE);
+
+    await page.goto(url);
+    await page.waitForSelector('.pagination__last');
+
+    let content = await page.content();
+    let $ = cheerio.load(content);
+    const pageCount = Number($('.pagination__last').attr('onclick').split(/.*?\(|\)/)[1]);
+    const pageArr = Array.from({length: pageCount}, (v, i) => i + 1);
+
+    for (let pageNo of pageArr) {
+        url = `${urlMarket}&pageNo=${pageNo}&grade=4&itemName=각인서`;
+
+        await page.goto(url);
+        await page.waitForSelector('#tbodyItemList');
+
+        content = await page.content();
+        $ = cheerio.load(content);
+        
+        const itemList = $('#tbodyItemList').children();
+        for (let item of itemList) {
+            let name = $(item).find('.name').text();
+            let price = $($(item).find('.price')[2]).children('em').text();
+            let engrave = {name:name, price:price};
+        
+            if (name[0] === '[') {
+                classes.push(engrave);
+            } else {
+                commons.push(engrave);
+            }
+        }
+    }
+    commons.sort((a, b) => { return b.name - a.name });
+    classes.sort((a, b) => { return b.name - a.name });
+
+    let date = new Date().toLocaleString();
+    db.collection('price_engrave_common').insertOne({time:date, engrave:commons}, (err, res) => {
+        if (err) return console.log(err);
+
+        console.log(`[MARKET_PRICE] engrave_common updated at ${date}`);
+    });
+    db.collection('price_engrave_class').insertOne({time:date, engrave:classes}, (err, res) => {
+        if (err) return console.log(err);
+
+        console.log(`[MARKET_PRICE] engrave_class updated at ${date}`);
+    });
+
+    await page.close();
+}
+
+
+// TODO
+// JSON으로 빼기?...
+function GetCollectionName(item) {
+    let collection;
+
+    switch (item) {
+        case 'myul':
+            collection = 'price_10myul';
+            break;
+        case 'hong':
+            collection = 'price_10hong';
+            break;
+        case 'esther':
+            collection = 'price_esther';
+            break;
+        case 'common':
+            collection = 'price_engrave_common';
+            break;
+        case 'class':
+            collection = 'price_engrave_class';
+            break;
+        default:
+            collection = null;
+            break;
+    }
+
+    return collection;
+}
+
+router.get('/single/:item', (req, res) => {
+    let item = req.params.item;
+    const COLLECTION = GetCollectionName(item);
+    
+    new Promise((resolve, reject) => {
+        let datas = [];
+
+        db.collection(COLLECTION).find().toArray((err, res) => {
+            if (err) return console.log(err);
+    
+            res.map((v, i) => {
+                let data = {time:v.time, price:v.price};
+                datas.push(data);
+            });
+            resolve(datas);
+        });
+    }).then((datas) => {
+        res.json(datas);
+    });
+});
+router.get('/engrave/:item', (req, res) => {
+    let item = req.params.item;
+    const COLLECTION = GetCollectionName(item);
+
+    new Promise((resolve, reject) => {
+        let datas = [];
+
+        db.collection(COLLECTION).find().toArray((err, res) => {
+            if (err) return console.log(err);
+
+            res.map((v, i) => {
+                let data = {time:v.time, engraves:v.engrave};
+                datas.push(data);
+            });
+            resolve(datas);
+        });
+    }).then((datas) => {
+        res.json(datas);
+    });
+});
 
 module.exports = router;
