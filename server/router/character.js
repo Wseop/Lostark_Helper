@@ -3,13 +3,6 @@ const router = express.Router();
 const cheerio = require('cheerio');
 const axios = require('axios');
 
-// Error handle - Access-Control-Allow-Origin
-router.use((req, res, next) => { 
-    res.header("Access-Control-Allow-Origin", "*"); 
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept"); 
-    next(); 
-});
-
 function GetProfile(html) {
     let profile;
     let $ = cheerio.load(html);
@@ -19,9 +12,6 @@ function GetProfile(html) {
         return null;
     }
     profile = $('script')[2].children[0].data.split('$.Profile = ')[1].split(';')[0];
-
-    // DEBUG
-    // fs.writeFileSync('../../temp/profile.json', profile, 'utf-8');
 
     return JSON.parse(profile);
 }

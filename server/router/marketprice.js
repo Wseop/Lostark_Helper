@@ -1,84 +1,66 @@
 const express = require('express');
 const router = express.Router();
-const MongoClient = require('mongodb').MongoClient;
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const schedule = require('node-schedule');
 const fs = require('fs');
+const db = require('../db.js');
+const webLoa = require('../web-loa.js');
 
 require('dotenv').config();
 
-// value값 자동으로 갱신할 수 있는 방법?...
-const COOKIE = {
-    name: 'SUAT',
-    value: process.env.STOVE_COOKIE,
-    domain: '.onstove.com'
-};
-
-let db;
-const urlAuction = 'https://lostark.game.onstove.com/Auction/GetAuctionListV2?sortOption.Sort=BUY_PRICE&sortOption.IsDesc=false';
-const urlMarket = 'https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&isInit=false&sortType=7';
+let browser;
+const URL_AUCTION = 'https://lostark.game.onstove.com/Auction/GetAuctionListV2?sortOption.Sort=BUY_PRICE&sortOption.IsDesc=false';
+const URL_MARKET = 'https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&isInit=false&sortType=7';
 const items = JSON.parse(fs.readFileSync(__dirname + '/../data/marketprice.json', 'utf-8'));
 
-if (db == null) {
-    MongoClient.connect(process.env.DB_URL, (err, client) => {
-        if (err) return console.log(err);
+schedule.scheduleJob('0 */1 * * *', () => {
+    (async() => {
+        browser = await puppeteer.launch();
 
-        db = client.db('LoaHelper');
+        // 10렙 보석 + 에스더의 기운
+        for (let item of items) {
+            let ret = await UpdateLowPrice(item);
+            
+            if (ret === false) {
+                console.log(`${item.name} update fail`);
+            }
+        }
+        // 각인서
+        await UpdateEngrave();
+    })();
+});
 
-        console.log('[MARKET_PRICE] db connected');
-
-        const job = schedule.scheduleJob('0 */1 * * *', () => {
-            (async() => {
-                const browser = await puppeteer.launch();
-
-                // 10렙 보석 + 에스더의 기운
-                for (let item of items) {
-                    let ret = await UpdateLowPrice(browser, item);
-                    
-                    if (ret === false) {
-                        console.log(`${item.name} update fail`);
-                    }
-                }
-                // 각인서
-                await UpdateEngrave(browser);
-
-                await browser.close();
-            })();
-        });
-    });
-}
-
-async function UpdateLowPrice(browser, item) {
+async function UpdateLowPrice(item) {
     let price;
 
     const page = await browser.newPage();
-    await page.setRequestInterception(true);
-    page.on('request', (request) => {
-        switch (request.resourceType()) {
-            case 'stylesheet':
-            case 'font':
-            case 'image':
-                request.abort();
-                break;
-            default:
-                request.continue();
-                break;
-        }
-    });
-    await page.setCookie(COOKIE);
-
+    await webLoa.FilterResource(page);
+    await page.setCookie(webLoa.cookie);
+    
     if (item.type === 'market') {
-        await page.goto(`${urlMarket}&pageNo=1&grade=${item.grade}&itemName=${item.name}`);
-        await page.waitForSelector('#tbodyItemList');
+        await page.goto(`${URL_MARKET}&pageNo=1&grade=${item.grade}&itemName=${item.name}`);
+        try {
+            await page.waitForSelector('#tbodyItemList');
+        } catch (e) {
+            console.log(e);
+            // 쿠키 Refresh
+            await webLoa.RefreshCookie();
+        }
 
         const content = await page.content();
         const $ = cheerio.load(content);
 
         price = $('#tbodyItemList > tr:nth-child(1) > td:nth-child(4) > div > em').text();
     } else if (item.type === 'auction') {
-        await page.goto(`${urlAuction}&pageNo=1&itemName=${item.name}`);
-        await page.waitForSelector('.pagination__last');
+        await page.goto(`${URL_AUCTION}&pageNo=1&itemName=${item.name}`);
+        try {
+            await page.waitForSelector('.pagination__last');
+        } catch (e) {
+            console.log(e);
+            // 쿠키 Refresh
+            await webLoa.RefreshCookie();
+        }
 
         let content = await page.content();
         let $ = cheerio.load(content);
@@ -87,10 +69,16 @@ async function UpdateLowPrice(browser, item) {
         let find = false;
 
         for (let pageNo of pageArr) {
-            const url = `${urlAuction}&pageNo=${pageNo}&itemName=${item.name}`;
+            const url = `${URL_AUCTION}&pageNo=${pageNo}&itemName=${item.name}`;
 
             await page.goto(url);
-            await page.waitForSelector('#auctionListTbody');
+            try {
+                await page.waitForSelector('#auctionListTbody');
+            } catch (e) {
+                console.log(e);
+                // 쿠키 Refresh
+                await webLoa.RefreshCookie();
+            }
             content = await page.content();
             $ = cheerio.load(content);
             
@@ -109,12 +97,11 @@ async function UpdateLowPrice(browser, item) {
             }
         }
     }
-
     await page.close();
 
     if (price != null) {
         let data = {time : new Date().toLocaleString(), price : price};
-        db.collection(item.collection).insertOne(data, (err, res) => {
+        db.client.collection(item.collection).insertOne(data, (err, res) => {
             if (err) return console.log(err);
 
             console.log(`[MARKET_PRICE] ${item.name} updated at ${data.time}`);
@@ -125,29 +112,23 @@ async function UpdateLowPrice(browser, item) {
     }
 }
 
-async function UpdateEngrave(browser) {
-    let url = `${urlMarket}&pageNo=1&grade=4&itemName=각인서`;
+async function UpdateEngrave() {
+    let url = `${URL_MARKET}&pageNo=1&grade=4&itemName=각인서`;
     let commons = [];
     let classes = [];
 
     const page = await browser.newPage();
-    await page.setRequestInterception(true);
-    page.on('request', (request) => {
-        switch (request.resourceType()) {
-            case 'stylesheet':
-            case 'font':
-            case 'image':
-                request.abort();
-                break;
-            default:
-                request.continue();
-                break;
-        }
-    });
-    await page.setCookie(COOKIE);
+    await webLoa.FilterResource(page);
+    await page.setCookie(webLoa.cookie);
 
     await page.goto(url);
-    await page.waitForSelector('.pagination__last');
+    try {
+        await page.waitForSelector('.pagination__last');
+    } catch (e) {
+        console.log(e);
+        // 쿠키 Refresh
+        await webLoa.RefreshCookie();
+    }
 
     let content = await page.content();
     let $ = cheerio.load(content);
@@ -155,10 +136,16 @@ async function UpdateEngrave(browser) {
     const pageArr = Array.from({length: pageCount}, (v, i) => i + 1);
 
     for (let pageNo of pageArr) {
-        url = `${urlMarket}&pageNo=${pageNo}&grade=4&itemName=각인서`;
+        url = `${URL_MARKET}&pageNo=${pageNo}&grade=4&itemName=각인서`;
 
         await page.goto(url);
-        await page.waitForSelector('#tbodyItemList');
+        try {
+            await page.waitForSelector('#tbodyItemList');
+        } catch (e) {
+            console.log(e);
+            // 쿠키 Refresh
+            await webLoa.RefreshCookie();
+        }
 
         content = await page.content();
         $ = cheerio.load(content);
@@ -180,12 +167,12 @@ async function UpdateEngrave(browser) {
     classes.sort((a, b) => { return b.name - a.name });
 
     let date = new Date().toLocaleString();
-    db.collection('price_engrave_common').insertOne({time:date, engrave:commons}, (err, res) => {
+    db.client.collection('price_engrave_common').insertOne({time:date, engrave:commons}, (err, res) => {
         if (err) return console.log(err);
 
         console.log(`[MARKET_PRICE] engrave_common updated at ${date}`);
     });
-    db.collection('price_engrave_class').insertOne({time:date, engrave:classes}, (err, res) => {
+    db.client.collection('price_engrave_class').insertOne({time:date, engrave:classes}, (err, res) => {
         if (err) return console.log(err);
 
         console.log(`[MARKET_PRICE] engrave_class updated at ${date}`);
@@ -231,7 +218,7 @@ router.get('/single/:item', (req, res) => {
     new Promise((resolve, reject) => {
         let datas = [];
 
-        db.collection(COLLECTION).find().toArray((err, res) => {
+        db.client.collection(COLLECTION).find().toArray((err, res) => {
             if (err) return console.log(err);
     
             res.map((v, i) => {
@@ -251,7 +238,7 @@ router.get('/engrave/:item', (req, res) => {
     new Promise((resolve, reject) => {
         let datas = [];
 
-        db.collection(COLLECTION).find().toArray((err, res) => {
+        db.client.collection(COLLECTION).find().toArray((err, res) => {
             if (err) return console.log(err);
 
             res.map((v, i) => {

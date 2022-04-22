@@ -1,19 +1,8 @@
-// 참고한 코드
-// puppeteer 불필요한 리소스 차단 - https://gracefullight.dev/2019/07/29/increase-puppeteer-crawling-speed/
-
 const express = require('express');
 const router = express.Router();
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
-
-require('dotenv').config();
-
-// value값 자동으로 갱신할 수 있는 방법?...
-const COOKIE = {
-    name: 'SUAT',
-    value: process.env.STOVE_COOKIE,
-    domain: '.onstove.com'
-};
+const webLoa = require('../web-loa.js');
 
 // 경매장에서 item의 최저가 탐색
 async function GetLowPrice(page, itemName) {
@@ -21,7 +10,13 @@ async function GetLowPrice(page, itemName) {
     let result = {};
 
     await page.goto(`${urlAuction}&pageNo=1&itemName=${itemName}`);
-    await page.waitForSelector('.pagination__last');
+    try {
+        await page.waitForSelector('.pagination__last');
+    } catch (e) {
+        console.log(e);
+        // 쿠키 Refresh
+        await webLoa.RefreshCookie();
+    }
     
     let content = await page.content();
     let $ = cheerio.load(content);
@@ -60,7 +55,13 @@ async function GetPrice(page, itemName, grade) {
     let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=1&isInit=false&sortType=7&itemName=${itemName}`;
 
     await page.goto(url);
-    await page.waitForSelector('#tbodyItemList');
+    try {
+        await page.waitForSelector('#tbodyItemList');
+    } catch (e) {
+        console.log(e);
+        // 쿠키 Refresh
+        await webLoa.RefreshCookie();
+    }
     
     const content = await page.content();
     const $ = cheerio.load(content);
@@ -79,7 +80,13 @@ async function GetPriceEngraves(page, grade) {
     let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=1&isInit=false&sortType=7&itemName=각인서`;
 
     await page.goto(url);
-    await page.waitForSelector('.pagination__last');
+    try {
+        await page.waitForSelector('.pagination__last');
+    } catch (e) {
+        console.log(e);
+        // 쿠키 Refresh
+        await webLoa.RefreshCookie();
+    }
 
     // 탐색해야할 page의 갯수를 구한 뒤 모든 page에 대해서 탐색
     let content = await page.content();
@@ -123,21 +130,8 @@ router.get('/auction', (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        // 불필요한 리소스 차단
-        await page.setRequestInterception(true);
-        page.on('request', (request) => {
-            switch (request.resourceType()) {
-                case 'stylesheet':
-                case 'font':
-                case 'image':
-                    request.abort();
-                    break;
-                default:
-                    request.continue();
-                    break;
-            }
-        });
-        await page.setCookie(COOKIE);
+        await webLoa.FilterResource(page);
+        await page.setCookie(webLoa.cookie);
 
         let items = req.query.items;
         let results = [];
@@ -161,21 +155,8 @@ router.get('/market', (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        // 불필요한 리소스 차단
-        await page.setRequestInterception(true);
-        page.on('request', (request) => {
-            switch (request.resourceType()) {
-                case 'stylesheet':
-                case 'font':
-                case 'image':
-                    request.abort();
-                    break;
-                default:
-                    request.continue();
-                    break;
-            }
-        });
-        await page.setCookie(COOKIE);
+        await webLoa.FilterResource(page);
+        await page.setCookie(webLoa.cookie);
 
         let items = req.query.items;
         let results = [];
@@ -199,21 +180,8 @@ router.get('/engravesCommon4', (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        // 불필요한 리소스 차단
-        await page.setRequestInterception(true);
-        page.on('request', (request) => {
-            switch (request.resourceType()) {
-                case 'stylesheet':
-                case 'font':
-                case 'image':
-                    request.abort();
-                    break;
-                default:
-                    request.continue();
-                    break;
-            }
-        });
-        await page.setCookie(COOKIE);
+        await webLoa.FilterResource(page);
+        await page.setCookie(webLoa.cookie);
 
         let engraves = await GetPriceEngraves(page, 4);
         let results = [];
@@ -236,21 +204,8 @@ router.get('/engravesClass4', (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        // 불필요한 리소스 차단
-        await page.setRequestInterception(true);
-        page.on('request', (request) => {
-            switch (request.resourceType()) {
-                case 'stylesheet':
-                case 'font':
-                case 'image':
-                    request.abort();
-                    break;
-                default:
-                    request.continue();
-                    break;
-            }
-        });
-        await page.setCookie(COOKIE);
+        await webLoa.FilterResource(page);
+        await page.setCookie(webLoa.cookie);
 
         let engraves = await GetPriceEngraves(page, 4);
         let results = [];
