@@ -3,9 +3,13 @@ const router = express.Router();
 const cheerio = require('cheerio');
 const axios = require('axios');
 
-function GetProfile(html) {
+// DEBUG
+const fs = require('fs');
+
+const URL_PROFILE = 'https://lostark.game.onstove.com/Profile/Character/';
+
+function GetProfile($) {
     let profile;
-    let $ = cheerio.load(html);
 
     // Profile 관련 정보만 parsing
     if ($('script')[2].children[0].data === '\n') {
@@ -13,214 +17,469 @@ function GetProfile(html) {
     }
     profile = $('script')[2].children[0].data.split('$.Profile = ')[1].split(';')[0];
 
+    // DEBUG
+    fs.writeFileSync('../../temp/profile.json', profile, 'utf-8');
+
     return JSON.parse(profile);
 }
-function ParseLevel(html) {
-    let levelData = {expedition:0, battle:0, item:0};
-    let $ = cheerio.load(html);
-
-    levelData.expedition = $($('.level-info__expedition').children('span')[1]).text().substring(3);
-    levelData.battle = $($('.level-info__item').children('span')[1]).text().substring(3);
-    levelData.item = $($('.level-info2__expedition').children('span')[1]).text().substring(3);
-
-    return levelData;
-}
-function ParseAbility(html) {
-    let abilityData = {basic: {attack: 0, engrave:0, maxHP: 0}, battle: {치명:0, 특화:0, 신속:0, 제압:0, 인내:0, 숙련:0 }};
-    let $ = cheerio.load(html);
-
-    // 공격력 parsing
-    let att = $('.profile-ability-basic').children('ul').children('li')[0];
-    let lists = $(att).children('div').children('ul').children('li');
-    let defaultAtt = $($(lists[1]).children('textformat').children('font')[1]).text();
-    let engraveAtt = $($(lists[2]).children('textformat').children('font')[1]).text();
-    abilityData.basic.attack = defaultAtt;
-    abilityData.basic.engrave = engraveAtt;
-
-    // hp값 parsing
-    let hp = $($($('.profile-ability-basic').children('ul').children('li')[1]).children('span')[1]).text();
-    abilityData.basic.maxHP = hp;
-
-    // 전투 특성 parsing
-    $('.profile-ability-battle').children('ul').children('li').map((i, element) => {
-        let type = $($(element).children('span')[0]).text();
-        let value = $($(element).children('span')[1]).text();
-        abilityData.battle[type] = value;
-    });
-
-    return abilityData;
-}
-function ParseEngrave(html) {
-    let engraveData = [];   // {engrave, level}
-    let $ = cheerio.load(html);
-
-    let engraveList = $('.profile-ability-engrave div div ul');
-    engraveList.map((i, ul) => {
-        if (ul != undefined) {
-            $(ul).children('li').map((i, li) => {
-                if (li != undefined) {
-                    let engrave = $(li).children('span').text().split(' Lv. ');
-                    // [0] : 각인 이름, [1] : level
-                    engraveData.push({engrave:engrave[0], level:engrave[1]});
-                }
-            });
-        }
-    });
-
-    return engraveData;
-}
-function ParseEquipment(html, equip) {
-    let equipmentData = {equip:[], accessory:[], stone:{}, bracelet:{}};
-    let $ = cheerio.load(html);
-    let itemKey = [];
-
-    $('.profile-equipment__slot').children('div').map((i, div) => {
-        let key = $(div).attr('data-item');
-
-        // 장비탭에서 각인을 제외한 정보만 가져옴
-        if (key != undefined && key[0] === 'E') {
-            itemKey.push(key);
-        }
-    });
-    itemKey.sort();
-
-    itemKey.map(item => {
-        let itemCode = Number(item.slice(-3));
-
-        // 장비
-        if (itemCode >= 0 && itemCode <= 5) {
-            let eq = {name:"", quality:0, iconPath:""};
-
-            eq.name = equip[item].Element_000.value.toLowerCase();
-            eq.quality = equip[item].Element_001.value.qualityValue;
-            eq.iconPath = 'https://cdn-lostark.game.onstove.com/' + equip[item].Element_001.value.slotData.iconPath;
-            equipmentData.equip.push(eq);
-        }
-        // 장신구
-        else if (itemCode >= 6 && itemCode <= 10) {
-            let acc = {name:"", quality:0, value:"", iconPath:""};
-
-            acc.name = equip[item].Element_000.value.toLowerCase();
-            acc.quality = equip[item].Element_001.value.qualityValue;
-            acc.value = equip[item].Element_005.value.Element_001.toLowerCase();
-            acc.iconPath = 'https://cdn-lostark.game.onstove.com/' + equip[item].Element_001.value.slotData.iconPath;
-            equipmentData.accessory.push(acc);
-        }
-        // 돌
-        else if (itemCode === 11) {
-            let st = {name:"", baseHP:"", bonusHP:"", engrave:"", iconPath:""};
-
-            st.name = equip[item].Element_000.value.toLowerCase();
-            st.baseHP = equip[item].Element_004.value.Element_001;
-            if (Object.entries(equip[item]).length === 9) {
-                st.bonusHP = 0;
-                st.engrave = equip[item].Element_005.value.Element_001.toLowerCase();
-            } else {
-                st.bonusHP = equip[item].Element_005.value.Element_001;
-                st.engrave = equip[item].Element_006.value.Element_001.toLowerCase();
-            }
-            st.iconPath = 'https://cdn-lostark.game.onstove.com/' + equip[item].Element_001.value.slotData.iconPath;
-            equipmentData.stone = st;
-        }
-        // 팔찌
-        else if (itemCode === 26) {
-            let brc = {name:"", effect:[], iconPath:""};
-
-            brc.name = equip[item].Element_000.value.toLowerCase();
-
-            // effect parsing - img태그 제거
-            let effs = equip[item].Element_004.value.Element_001.toLowerCase();
-            effs = effs.split(/<img.*?>|<\/img>|<br>/);
-            effs.map((e) => {
-                if (e != '') {
-                    brc.effect.push(e);
-                }
-            });
-            brc.iconPath = 'https://cdn-lostark.game.onstove.com/' + equip[item].Element_001.value.slotData.iconPath;
-            equipmentData.bracelet = brc;
-        }
-    });
-
-    return equipmentData;
-}
-function ParseJewel(html, profile) {
-    let jewelData = []; // {iconPath, level, desc}
-    let $ = cheerio.load(html);
-
-    // {index, desc}
-    let myuls = [];
-    let hongs = [];
-    // 장착 슬롯(index)과 보석 효과 추출 (효과에 따라 멸화, 홍염 구분)
-    if (profile.GemSkillEffect == undefined) {
-        return null;
-    }
-    profile.GemSkillEffect.map((element) => {
-        if (element != undefined) {
-            let index = element.EquipGemSlotIndex;
-            let desc = element.SkillDesc.toLowerCase();;
-
-            if (desc.slice(-2) === '증가') {
-                myuls.push({index:index, desc:desc});
-            } else if (desc.slice(-2) === '감소') {
-                hongs.push({index:index, desc:desc});
-            }
-        }
-    });
-    // profile에서 사용할 key값을 html에서 추출
-    let dataItems = [];
-    $('.jewel__wrap').children('span').map((i, element) => {
-        if (element != undefined) {
-            dataItems.push($(element).attr('data-item'));
-        }
-    });
-    // profile에서 iconPath와 보석레벨 정보 추출
-    myuls.map((myul) => {
-        let key = dataItems[myul.index];
-        let slotData = profile.Equip[key].Element_001.value.slotData;
-        let iconPath = 'https://cdn-lostark.game.onstove.com/' + slotData.iconPath;
-        let level = slotData.rtString;
-
-        jewelData.push({iconPath:iconPath, level:level, desc:myul.desc});
-    });
-    hongs.map((hong) => {
-        let key = dataItems[hong.index];
-        let slotData = profile.Equip[key].Element_001.value.slotData;
-        let iconPath = 'https://cdn-lostark.game.onstove.com/' + slotData.iconPath;
-        let level = slotData.rtString;
-
-        jewelData.push({iconPath:iconPath, level:level, desc:hong.desc});
-    });
-
-    return jewelData;
-}
-function ParseCard(cardSet) {
-    let card = [];  // {desc, title}
+// 직업 추출
+function GetClass($) {
+    let cls = {};
     
-    for (let i = 0; i < 6; i++) {
-        let key = 'Effect_00' + i;
-        let value = cardSet.CardSetEffect_000[key];
+    cls.name = $('#lostark-wrapper > div > main > div > div.profile-character-info > img').attr('alt');
+    cls.imgSrc = $('#lostark-wrapper > div > main > div > div.profile-character-info > img').attr('src');
+
+    return cls;
+}
+// 서버명 추출
+function GetServer($) {
+    let server = $('.profile-character-info__server').text();
+
+    return server;
+}
+// 레벨 정보 추출
+// 원정대, 전투, 장착, 최대 도달 레벨
+function GetLevel($) {
+    let level = {};
+
+    level.expedition = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.level-info > div.level-info__expedition > span:nth-child(2)').text();
+    level.battle = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.level-info > div.level-info__item > span:nth-child(2)').text();
+    level.itemEquip = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.level-info2 > div.level-info2__expedition > span:nth-child(2)').text();
+    level.itemMax = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.level-info2 > div.level-info2__item > span:nth-child(2)').text();
+
+    return level;
+}
+// 칭호, 길드명, pvp등급, 영지이름 추출
+function GetGameInfo($) {
+    let gameInfo = {};
+
+    gameInfo.title = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.game-info > div.game-info__title > span:nth-child(2)').text();
+    gameInfo.guild = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.game-info > div.game-info__guild > span:nth-child(2)').text();
+    gameInfo.pvp = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.game-info > div.level-info__pvp > span:nth-child(2)').text();
+    gameInfo.dominion = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.game-info > div.game-info__wisdom > span:nth-child(3)').text();
+
+    return gameInfo;
+}
+// 특수장비 (나침반, 부적, pvp) 추출
+function GetSpecialItems($) {
+    let specialItems = [];
+
+    $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.special-info > div > ul').children('li').map((i, v) => {
+        let item = {};
         
-        if (value !== undefined) {
-            card.push(value);
+        item.imgSrc = $(v).find('.slot_img > img').attr('src');
+        item.dataGrade = $(v).find('.slot').attr('data-grade');
+        item.name = $(v).find('div > span > p > font').text();
+        if (item.imgSrc != null) {
+            specialItems.push(item);
+        }
+    });
+
+    return specialItems;
+}
+// 능력치 탭의 정보 추출
+function GetStats($) {
+    let stats = {};
+    let profile = GetProfile($);
+
+    // 기본 특성 (공격력, 최대 생명력)
+    stats.abilityBasic = GetAbilityBasic($);
+    // 전투 특성 (치, 특, 신, 제, 인, 숙)
+    stats.abilityBattle = GetAbilityBattle($);
+    // 각인 효과
+    stats.engrave = GetEngrave($);
+    // 성향
+    stats.propensity = GetPropensity($);
+    // 장비
+    stats.equipment = GetEquipment($, profile);
+    // 보석
+    stats.jewels = GetJewel($, profile);
+    // 카드
+    stats.card = GetCard($);
+
+    return stats;
+}
+// 기본 특성 추출 (공격력, 최대 생명력)
+function GetAbilityBasic($) {
+    let abilityBasic = {};
+
+    abilityBasic.maxHp = $('#profile-ability > div.profile-ability-basic > ul > li:nth-child(2) > span:nth-child(2)').text();
+    abilityBasic.attack = $('#profile-ability > div.profile-ability-basic > ul > li:nth-child(1) > div > ul > li:nth-child(2) > textformat > font:nth-child(2)').text();
+    // 각인 (저주받은 인형, 공격력 감소) 효과
+    abilityBasic.attackEngrave = $('#profile-ability > div.profile-ability-basic > ul > li:nth-child(1) > div > ul > li:nth-child(3) > textformat > font:nth-child(2)').text();
+
+    return abilityBasic;
+}
+// 전투 특성 추출 (치명, 특화, 제압, 신속, 인내, 숙련)
+function GetAbilityBattle($) {
+    let abilityBattle = {};
+    let key = ['critical', 'specialization', 'domination', 'swift', 'endurance', 'expertise'];
+
+    $('#profile-ability > div.profile-ability-battle > ul').children('li').map((i, v) => {
+        abilityBattle[key[i]] = $($(v).children('span')[1]).text();
+    });
+
+    return abilityBattle;
+}
+// 각인 효과 추출
+function GetEngrave($) {
+    let engrave = [];
+    
+    $('.profile-ability-engrave > div > div').children('ul').map((i, ul) => {
+        $(ul).children('li').map((j, li) => {
+            engrave.push($(li).find('span').text());
+        });
+    });
+
+    return engrave;
+}
+// 성향 값 추출
+function GetPropensity($) {
+    let propensity = {};
+    let rawData = $('script')[12].children[0].data.trim().split(/value\: \[|\n|\]|,/);
+
+    propensity.intelligence = rawData[18].trim();
+    propensity.courage = rawData[20].trim();
+    propensity.charm = rawData[22].trim();
+    propensity.kindness = rawData[24].trim();
+
+    return propensity;
+}
+// 착용 장비 추출
+function GetEquipment($, profile) {
+    let equipment = {};
+    let dataKey;    // data-item 속성에서 추출, 값이 null이면 빈칸(미장착)
+
+    // 무기
+    let $_weapon = $('.profile-equipment__slot').find('.slot6');
+    dataKey = $($_weapon).attr('data-item');
+    if (dataKey != null) {
+        let weapon = {};
+        
+        weapon.dataGrade = $($_weapon).attr('data-grade');
+        weapon.imgSrc = $($_weapon).find('img').attr('src');
+        weapon.name = profile.Equip[dataKey].Element_000.value.split(/\<.*?\>/)[2];
+        weapon.quality = profile.Equip[dataKey].Element_001.value.qualityValue;
+        weapon.effect0 = profile.Equip[dataKey].Element_005.value.Element_001;
+        weapon.effect1 = profile.Equip[dataKey].Element_006.value.Element_001;
+
+        equipment.weapon = weapon;
+    }
+    // 방어구 (투구, 견갑, 상의, 하의, 장갑)
+    let armors = [];
+    for (let i = 1; i <= 5; i++) {
+        let $_armor = $('.profile-equipment__slot').find(`.slot${i}`);
+        dataKey = $($_armor).attr('data-item');
+        if (dataKey != null) {
+            let armor = {};
+
+            armor.dataGrade = $($_armor).attr('data-grade');
+            armor.imgSrc = $($_armor).find('img').attr('src');
+            armor.name = profile.Equip[dataKey].Element_000.value.split(/\<.*?\>/)[2];
+            armor.quality = profile.Equip[dataKey].Element_001.value.qualityValue;
+            let effect = profile.Equip[dataKey].Element_005.value.Element_001;
+            if (effect != null) {
+                armor.effect0 = effect.split(/\<BR\>/);
+            }
+            effect = profile.Equip[dataKey].Element_006.value.Element_001;
+            if (effect != null) {
+                armor.effect1 = effect.split(/\<BR\>/);
+            }
+
+            armors.push(armor);
         }
     }
+    equipment.armors = armors;
+    // 악세 (목걸이, 귀걸이, 반지)
+    let accessories = [];
+    for (let i = 7; i <= 11; i++) {
+        let $_acc = $('.profile-equipment__slot').find(`.slot${i}`);
+        dataKey = $($_acc).attr('data-item');
+        if (dataKey != null) {
+            let accessory = {};
 
-    return card;
+            accessory.dataGrade = $($_acc).attr('data-grade');
+            accessory.imgSrc = $($_acc).find('img').attr('src');
+            accessory.name = profile.Equip[dataKey].Element_000.value.split(/\<.*?\>/)[2];
+            accessory.quality = profile.Equip[dataKey].Element_001.value.qualityValue;
+            accessory.effect0 = [];
+            profile.Equip[dataKey].Element_004.value.Element_001.split(/\<.*?\>/).map((v, i) => {
+                if (v.length > 0) {
+                    accessory.effect0.push(v);
+                }
+            });
+            accessory.effect1 = [];
+            profile.Equip[dataKey].Element_005.value.Element_001.split(/\<.*?\>/).map((v, i) => {
+                if (v.length > 0) {
+                    accessory.effect1.push(v);
+                }
+            });
+            let engrave = profile.Equip[dataKey].Element_006.value.Element_001.split(/\<.*?\>|\[|\]/);
+            accessory.engraves = [];
+            accessory.engraves.push(engrave[2] + engrave[4]);
+            accessory.engraves.push(engrave[7] + engrave[9]);
+            accessory.penalty = (engrave[12] + engrave[14]);
+
+            accessories.push(accessory);
+        }
+    }
+    equipment.accessories = accessories;
+    // 팔찌
+    let $_bracelet = $('.profile-equipment__slot').find('.slot12');
+    dataKey = $($_bracelet).attr('data-item');
+    if (dataKey != null) {
+        let bracelet = {};
+
+        bracelet.dataGrade = $($_bracelet).attr('data-grade');
+        bracelet.imgSrc = $($_bracelet).find('img').attr('src');
+        bracelet.name = profile.Equip[dataKey].Element_000.value.split(/\<.*?\>/)[2];
+
+        // 팔찌 효과 parsing
+        let effects = [];
+        // img태그를 기준으로 split (각 효과마다 img태그를 하나씩 가지고 있음)
+        let effectSplited = profile.Equip[dataKey].Element_004.value.Element_001.split(/\<img.*?\>|\<\/img\>/);
+        // split 결과에서 빈 문자열은 제거
+        effectSplited.map((v, i) => {
+            if (v.length > 0) {
+                effects.push(v);
+            }
+        });
+        // <BR> 태그 제거 (개행문자로 replace)
+        effects.map((v, i) => {
+            effects[i] = v.replace(/<BR>/g, '\n');
+        });
+        // style관련 태그를 제거
+        effects.map((v, i) => {
+            let styleRemoved = v.split(/\[.*?\]|\<.*?\>/);
+            
+            // style관련 태그 제거 후 분리된 문자열들을 다시 합침
+            let result = '';
+            styleRemoved.map((u, j) => {
+                if (u.length > 0) {
+                    result += u;
+                }
+            });
+            effects[i] = result.trim();
+        });
+        bracelet.effects = effects;
+
+        equipment.bracelet = bracelet;
+    }
+    // 어빌리티 스톤
+    let $_stone = $('.profile-equipment__slot').find('.slot13');
+    dataKey = $($_stone).attr('data-item');
+    if (dataKey != null) {
+        let stone = {};
+
+        stone.dataGrade = $($_stone).attr('data-grade');
+        stone.imgSrc = $($_stone).find('img').attr('src');
+        stone.name = profile.Equip[dataKey].Element_000.value.split(/\<.*?\>/)[2];
+        stone.health = [];
+
+        stone.health.push(profile.Equip[dataKey].Element_004.value.Element_001);
+        stone.engraves = [];
+        let effect = profile.Equip[dataKey].Element_005.value.Element_001;
+        if (effect != null) {
+            // [로 시작하면 각인 효과 (보너스 체력 효과 없음)
+            if (effect[0] === '[') {
+                let engraves = effect.split(/\<.*?\>|\[|\]/);
+
+                stone.engraves.push(engraves[2] + engraves[4]);
+                stone.engraves.push(engraves[7] + engraves[9]);
+                stone.penalty = engraves[12] + engraves[14];
+            } else {
+                // 보너스 체력 효과가 있는 경우
+                stone.health.push(effect);
+                // 각인 효과까지 추가 추출
+                effect = profile.Equip[dataKey].Element_006.value.Element_001;
+                if (effect != null) {
+                    let engraves = effect.split(/\<.*?\>|\[|\]/);
+
+                    stone.engraves.push(engraves[2] + engraves[4]);
+                    stone.engraves.push(engraves[7] + engraves[9]);
+                    stone.penalty = engraves[12] + engraves[14];
+                }
+            }
+        }
+        equipment.stone = stone;
+    }
+
+    return equipment;
+}
+// 보석 추출
+function GetJewel($, profile) {
+    let jewels = [];
+
+    $('#profile-jewel > div > div.jewel__wrap').children('span').map((i, v) => {
+        let jewel = {};
+        let dataKey = $(v).attr('data-item');
+
+        if (dataKey != null) {
+            jewel.dataGrade = $(v).attr('data-grade');
+            jewel.imgSrc = $($(v).children('span')[1]).find('img').attr('src');
+            jewel.level = profile.Equip[dataKey].Element_001.value.slotData.rtString;
+            jewel.name = profile.Equip[dataKey].Element_000.value.split(/\<.*?\>/)[2];
+            // 보석 효과 설명에서 style관련 태그 제거
+            let tagRemoved = profile.Equip[dataKey].Element_004.value.Element_001.split(/\[.*?\]|\<.*?\>/);
+            let effect = [];
+            // 유효한 문자열만 추출
+            tagRemoved.map((v, i) => {
+                if (v.trim().length > 0) {
+                    effect.push(v.trim());
+                }
+            });
+            jewel.effect = {};
+            // 적용 스킬
+            jewel.effect.skill = effect[0];
+            // 적용 효과
+            jewel.effect.effect = effect[1];
+            jewels.push(jewel);
+        }
+    });
+
+    return jewels;
+}
+// 카드 효과 추출
+function GetCard($) {
+    let cards = [];
+
+    $('#cardSetList').children('li').map((i, v) => {
+        let card = {};
+
+        card.title = $(v).find('div.card-effect__title').text();
+        card.effect = $(v).find('div.card-effect__dsc').text();
+        cards.push(card);
+    });
+
+    return cards;
+}
+// 스킬 포인트 및 세부정보 추출
+function GetSkill($) {
+    let skill = {};
+
+    skill.point = GetSkillPoint($);
+    skill.skills = GetSkillDetail($);
+
+    return skill;
+}
+// 스킬 포인트 추출
+function GetSkillPoint($) {
+    let point = {};
+
+    // 사용 포인트
+    point.use = $('#profile-skill > div.profile-skill-battle > div.profile-skill__point > em:nth-child(1)').text();
+    // 보유 포인트
+    point.total = $('#profile-skill > div.profile-skill-battle > div.profile-skill__point > em:nth-child(2)').text();
+
+    return point;
+}
+// 트라이포드 등 스킬 세부정보 추출
+function GetSkillDetail($) {
+    let skills = [];
+    let profile = GetProfile($);
+    
+    $('#profile-skill > div.profile-skill-battle > div.profile-skill__list').children('div').map((i, v) => {
+        let level = $(v).find('a > div.profile-skill__lv > em').text();
+        let rune = $(v).find('a > div.profile-skill__lun').attr('data-runetooltip');
+        
+        // 레벨을 올렸거나, 룬을 착용한 스킬만 추출
+        if (Number(level) > 1 || rune != null) {
+            let skill = {};
+            let dataKey = $(v).find('a > div.profile-skill__slot').attr('data-item');
+            
+            skill.level = level;
+            skill.imgSrc = $(v).find('a > div.profile-skill__slot > img').attr('src');
+            skill.name = profile.Skill[dataKey].Element_000.value;
+
+            let tripods = [];
+            let runeElementKey;
+            for (let i = 0; i < 3; i++) {
+                let element;
+
+                // 자원 소모 유무에 따라 트라이포드와 룬정보의 key값이 달라짐
+                // 자원소모O 트포O -> Element_006(트포) & Element_007(룬)
+                // 자원소모X 트포O -> Element_005(트포) & Element_006(룬)
+                // 자원소모X 트포X -> Element_005(룬)
+                let type = profile.Skill[dataKey].Element_005.type;
+                if (type === 'TripodSkillCustom') {
+                    element = profile.Skill[dataKey].Element_005.value[`Element_00${i}`];
+                    runeElementKey = 'Element_006';
+                } else if (type === 'SingleTextBox') {
+                    element = profile.Skill[dataKey].Element_006.value[`Element_00${i}`];
+                    runeElementKey = 'Element_007';
+                } else {
+                    runeElementKey = 'Element_005';
+                }
+
+                if (element != null && element.lock === false) {
+                    let tripod = {};
+
+                    tripod.name = element.name.split(/\<.*?\>/)[1];
+                    tripod.level = element.tier.split(/\<.*?\>/)[1];
+                    tripods.push(tripod);
+                }
+            }
+            skill.tripods = tripods;
+            if (rune != null) {
+                let rune = {};
+                
+                rune.dataGrade = $(v).find('a > div.profile-skill__lun').attr('data-grade');
+                rune.imgSrc = $(v).find('a > div.profile-skill__lun > img').attr('src');
+                let effect = profile.Skill[dataKey][runeElementKey].value.Element_001.split(/\<.*?\>|\[|\]/);
+                
+                rune.name = effect[2].trim();
+                rune.effect = effect[4].trim();
+                skill.rune = rune;
+            }
+            skills.push(skill);
+        }
+    });
+
+    return skills;
 }
 
-router.get('/profile/:nickname', (req, res) => {
+/*
+반환 객체 형식
+{
+    exist,
+    name,
+    class : {name, imgSrc},
+    server,
+    level : {expedition, battle, itemEquip, itemMax},
+    gameInfo : {title, guild, pvp, dominion},
+    specialItems[] : {imgSrc, dataGrade, name},
+    stats : {
+        abilityBasic : {maxHp, attack, attackEngrave},
+        abilityBattle : {critical, specialization, domination, swift, endurance, expertise},
+        engrave[],
+        propensity : {intelligence, courage, charm, kindness},
+        equipment : {
+            weapon : {dataGrade, imgSrc, name, quality, effect0, effect1},
+            armors[] : {dataGrade, imgSrc, name, quality, effect0, effect1},
+            accessories[] : {dataGrade, imgSrc, name, quality, effect0, effect1, engraves[], penalty},
+            bracelet : {dataGrade, imgSrc, name, effects[]},
+            stone : {dataGrade, imgSrc, name, health[], engraves[], penalty},
+            jewels[] : {dataGrade, imgSrc, level, name, effect : {skill, effect}},
+            card[] : {title, effect}
+        }
+    },
+    skill : {
+        point : {use, total}, 
+        skills[] : {
+            level, 
+            imgSrc, 
+            name, 
+            tripods[] : {name, level}, 
+            rune : {dataGrade, imgSrc, name, effect}
+        }
+    }
+}
+*/
+router.get('/:nickname', (req, res) => {
+    let info = {};
+
     if (req.params.nickname != null) {
-        let url = 'https://lostark.game.onstove.com/Profile/Character/' + encodeURI(req.params.nickname);
-        let profile;
-        let data = {
-            Name:"",
-            Level:{expedition:0, battle:0, item:0}, 
-            Ability:{basic:{attack:0, engrave:0, maxHP:0}, battle:{치명:0, 특화:0, 신속:0, 제압:0, 인내:0, 숙련:0}}, 
-            Engrave:[], 
-            Equipment:{equip:[], accessory:[], stone:{name:"", baseHP:"", bonusHP:"", engrave:"", iconPath:""}, bracelet:{name:"", effect:[], iconPath:""}}, 
-            Jewel:[], 
-            Card:[]
-        };
+        let url = URL_PROFILE + encodeURI(req.params.nickname);
 
         axios.get(url).then((result) => {
             let html = result.data;
@@ -228,31 +487,28 @@ router.get('/profile/:nickname', (req, res) => {
             let find = $($('.profile-attention').children('span')[1]).text();
 
             if (find == '캐릭터명을 확인해주세요.') {
-                data.Name = '존재하지 않는 캐릭터명입니다.';
-                res.send(data);
+                info.exist = false;
+                res.json(info);
             } else {
-                data.Name = req.params.nickname;
-                profile = GetProfile(html);
-                
                 // DEBUG
-                // fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
+                fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
 
-                data.Level = ParseLevel(html);
-                data.Ability = ParseAbility(html);
-                data.Engrave = ParseEngrave(html);
-                if (profile != null) {
-                    data.Equipment = ParseEquipment(html, profile.Equip);
-                    data.Jewel = ParseJewel(html, profile);
-                    data.Card = ParseCard(profile.CardSet);
-                }
-                res.send(data);
+                info.exist = true;
+                info.name = req.params.nickname;
+                info.class = GetClass($);
+                info.server = GetServer($);
+                info.level = GetLevel($);
+                info.gameInfo = GetGameInfo($);
+                info.specialItems = GetSpecialItems($);
+                info.stats = GetStats($);
+                info.skill = GetSkill($);
+                res.json(info);
             }
         });
+    } else {
+        data.exist = false;
+        res.json(info);
     }
-});
-
-router.get('/diff/:nickname1/:nickname2', (req, res) => {
-    
 });
 
 module.exports = router;
