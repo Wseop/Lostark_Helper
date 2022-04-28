@@ -46,6 +46,8 @@ async function UpdateLowPrice(item) {
             console.log(e);
             // 쿠키 Refresh
             await webLoa.RefreshCookie();
+            await page.goto(`${URL_MARKET}&pageNo=1&grade=${item.grade}&itemName=${item.name}`);
+            await page.waitForSelector('#tbodyItemList');
         }
 
         const content = await page.content();
@@ -60,6 +62,8 @@ async function UpdateLowPrice(item) {
             console.log(e);
             // 쿠키 Refresh
             await webLoa.RefreshCookie();
+            await page.goto(`${URL_AUCTION}&pageNo=1&itemName=${item.name}`);
+            await page.waitForSelector('.pagination__last');
         }
 
         let content = await page.content();
@@ -78,6 +82,8 @@ async function UpdateLowPrice(item) {
                 console.log(e);
                 // 쿠키 Refresh
                 await webLoa.RefreshCookie();
+                await page.goto(url);
+                await page.waitForSelector('#auctionListTbody');
             }
             content = await page.content();
             $ = cheerio.load(content);
@@ -128,6 +134,8 @@ async function UpdateEngrave() {
         console.log(e);
         // 쿠키 Refresh
         await webLoa.RefreshCookie();
+        await page.goto(url);
+        await page.waitForSelector('.pagination__last');
     }
 
     let content = await page.content();
@@ -145,6 +153,8 @@ async function UpdateEngrave() {
             console.log(e);
             // 쿠키 Refresh
             await webLoa.RefreshCookie();
+            await page.goto(url);
+            await page.waitForSelector('#tbodyItemList');
         }
 
         content = await page.content();
