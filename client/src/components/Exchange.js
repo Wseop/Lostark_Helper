@@ -2,7 +2,7 @@ import { React, useState, useEffect } from 'react';
 import axios from 'axios';
 import { Container, Spinner, Table, Tabs, Tab, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
-import './App.css';
+import '../App.css';
 
 function TableHead(props) {
     function ThPrice() {
@@ -190,7 +190,7 @@ function HighPrice() {
 function Exchange() {
     let reforgingMain = [
         '수호석 결정', '수호강석', '파괴석 결정', '파괴강석', '명예의 파편 주머니(소)', '명예의 파편 주머니(중)', '명예의 파편 주머니(대)',
-        '명예의 돌파석', '위대한 명예의 돌파석', '경이로운 명예의 돌파석'
+        '명예의 돌파석', '위대한 명예의 돌파석', '경이로운 명예의 돌파석', '하급 오레하', '중급 오레하', '상급 오레하'
     ];
     let reforgingSub = [
         '태양의 은총', '태양의 축복', '태양의 가호'

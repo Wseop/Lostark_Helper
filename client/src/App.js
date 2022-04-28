@@ -2,10 +2,10 @@ import React from 'react';
 import './App.css';
 import { Route, Switch } from 'react-router-dom';
 
-import Navigation from './Navigation.js';
-import ContentRaid from './ContentRaid.js';
-import Profile from './Profile.js';
-import Exchange from './Exchange.js';
+import Navigation from './components/Navigation.js';
+import ContentRaid from './components/ContentRaid.js';
+import Profile from './components/Profile.js';
+import Exchange from './components/Exchange.js';
 
 function App() {
   return (

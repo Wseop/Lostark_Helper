@@ -488,7 +488,7 @@ router.get('/:nickname', (req, res) => {
 
             if (find == '캐릭터명을 확인해주세요.') {
                 info.exist = false;
-                res.json(info);
+                res.send(info);
             } else {
                 // DEBUG
                 fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
@@ -502,12 +502,12 @@ router.get('/:nickname', (req, res) => {
                 info.specialItems = GetSpecialItems($);
                 info.stats = GetStats($);
                 info.skill = GetSkill($);
-                res.json(info);
+                res.send(info);
             }
         });
     } else {
         data.exist = false;
-        res.json(info);
+        res.send(info);
     }
 });
 

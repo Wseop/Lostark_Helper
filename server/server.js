@@ -15,14 +15,14 @@ app.use((req, res, next) => {
 // router
 const character = require('./router/character.js');
 app.use('/character', character);
-//const exchange = require('./router/exchange.js');
-//app.use('/exchange', exchange);
-//const marketPrice = require('./router/marketprice.js');
-//app.use('/marketprice', marketPrice);
+const exchange = require('./router/exchange.js');
+app.use('/exchange', exchange);
+const marketPrice = require('./router/marketprice.js');
+app.use('/marketprice', marketPrice);
 
 app.listen(process.env.PORT, () => {
   (async() => {
-    //await webLoa.RefreshCookie();
+    await webLoa.RefreshCookie();
     console.log('listening on ' + process.env.PORT);
   })();
 });

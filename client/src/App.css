@@ -65,3 +65,45 @@ body {
 .data-grade-7 {
   color: #3cf2e6;
 }
+
+.bg-quality-100 {
+  background-color: #fe9600;
+}
+.bg-quality-90 {
+  background-color: #ce43fc;
+}
+.bg-quality-70 {
+  background-color: #00b5ff;
+}
+.bg-quality-30 {
+  background-color: #91fe02;
+}
+.bg-quality-10 {
+  background-color: #ffd200;
+}
+.bg-quality-0 {
+  background-color: #ff6000;
+}
+
+.quality-grade-100 {
+  color: #fe9600;
+}
+.quality-grade-90 {
+  color: #ce43fc;
+}
+.quality-grade-70 {
+  color: #00b5ff;
+}
+.quality-grade-30 {
+  color: #91fe02;
+}
+.quality-grade-10 {
+  color: #ffd200;
+}
+.quality-grade-0 {
+  color: #ff6000;
+}
+
+.jewelDetail > .tooltip-inner {
+  max-width: 100%;
+}
