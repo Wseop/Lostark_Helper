@@ -10,7 +10,7 @@ const URL_MAIN = 'https://lostark.game.onstove.com/';
 let webLoa = {};
 let browser, page;
 
-webLoa.RefreshCookie = async function() {
+webLoa.refreshCookie = async function() {
     // 이미 열려있는 페이지(탭)가 있으면 닫고 새로 오픈
     if (browser != null) {
         await browser.close();
@@ -41,7 +41,7 @@ webLoa.RefreshCookie = async function() {
     // session cookie 유지를 위해 page 열린채로 유지
 }
 
-webLoa.FilterResource = async function(page) {
+webLoa.filterResource = async function(page) {
     // 불필요한 리소스 차단
     await page.setRequestInterception(true);
     page.on('request', (request) => {

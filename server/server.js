@@ -22,7 +22,7 @@ app.use('/marketprice', marketPrice);
 
 app.listen(process.env.PORT, () => {
   (async() => {
-    await webLoa.RefreshCookie();
+    await webLoa.refreshCookie();
     console.log('listening on ' + process.env.PORT);
   })();
 });

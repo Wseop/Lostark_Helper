@@ -8,7 +8,7 @@ const fs = require('fs');
 
 const URL_PROFILE = 'https://lostark.game.onstove.com/Profile/Character/';
 
-function GetProfile($) {
+function getProfile($) {
     let profile;
 
     // Profile 관련 정보만 parsing
@@ -23,7 +23,7 @@ function GetProfile($) {
     return JSON.parse(profile);
 }
 // 직업 추출
-function GetClass($) {
+function getClass($) {
     let cls = {};
     
     cls.name = $('#lostark-wrapper > div > main > div > div.profile-character-info > img').attr('alt');
@@ -32,14 +32,14 @@ function GetClass($) {
     return cls;
 }
 // 서버명 추출
-function GetServer($) {
+function getServer($) {
     let server = $('.profile-character-info__server').text();
 
     return server;
 }
 // 레벨 정보 추출
 // 원정대, 전투, 장착, 최대 도달 레벨
-function GetLevel($) {
+function getLevel($) {
     let level = {};
 
     level.expedition = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.level-info > div.level-info__expedition > span:nth-child(2)').text();
@@ -50,7 +50,7 @@ function GetLevel($) {
     return level;
 }
 // 칭호, 길드명, pvp등급, 영지이름 추출
-function GetGameInfo($) {
+function getGameInfo($) {
     let gameInfo = {};
 
     gameInfo.title = $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.game-info > div.game-info__title > span:nth-child(2)').text();
@@ -61,7 +61,7 @@ function GetGameInfo($) {
     return gameInfo;
 }
 // 특수장비 (나침반, 부적, pvp) 추출
-function GetSpecialItems($) {
+function getSpecialItems($) {
     let specialItems = [];
 
     $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.special-info > div > ul').children('li').map((i, v) => {
@@ -78,29 +78,29 @@ function GetSpecialItems($) {
     return specialItems;
 }
 // 능력치 탭의 정보 추출
-function GetStats($) {
+function getStats($) {
     let stats = {};
-    let profile = GetProfile($);
+    let profile = getProfile($);
 
     // 기본 특성 (공격력, 최대 생명력)
-    stats.abilityBasic = GetAbilityBasic($);
+    stats.abilityBasic = getAbilityBasic($);
     // 전투 특성 (치, 특, 신, 제, 인, 숙)
-    stats.abilityBattle = GetAbilityBattle($);
+    stats.abilityBattle = getAbilityBattle($);
     // 각인 효과
-    stats.engrave = GetEngrave($);
+    stats.engrave = getEngrave($);
     // 성향
-    stats.propensity = GetPropensity($);
+    stats.propensity = getPropensity($);
     // 장비
-    stats.equipment = GetEquipment($, profile);
+    stats.equipment = getEquipment($, profile);
     // 보석
-    stats.jewels = GetJewel($, profile);
+    stats.jewels = getJewel($, profile);
     // 카드
-    stats.card = GetCard($);
+    stats.card = getCard($);
 
     return stats;
 }
 // 기본 특성 추출 (공격력, 최대 생명력)
-function GetAbilityBasic($) {
+function getAbilityBasic($) {
     let abilityBasic = {};
 
     abilityBasic.maxHp = $('#profile-ability > div.profile-ability-basic > ul > li:nth-child(2) > span:nth-child(2)').text();
@@ -111,7 +111,7 @@ function GetAbilityBasic($) {
     return abilityBasic;
 }
 // 전투 특성 추출 (치명, 특화, 제압, 신속, 인내, 숙련)
-function GetAbilityBattle($) {
+function getAbilityBattle($) {
     let abilityBattle = {};
     let key = ['critical', 'specialization', 'domination', 'swift', 'endurance', 'expertise'];
 
@@ -122,7 +122,7 @@ function GetAbilityBattle($) {
     return abilityBattle;
 }
 // 각인 효과 추출
-function GetEngrave($) {
+function getEngrave($) {
     let engrave = [];
     
     $('.profile-ability-engrave > div > div').children('ul').map((i, ul) => {
@@ -134,7 +134,7 @@ function GetEngrave($) {
     return engrave;
 }
 // 성향 값 추출
-function GetPropensity($) {
+function getPropensity($) {
     let propensity = {};
     let rawData = $('script')[12].children[0].data.trim().split(/value\: \[|\n|\]|,/);
 
@@ -146,7 +146,7 @@ function GetPropensity($) {
     return propensity;
 }
 // 착용 장비 추출
-function GetEquipment($, profile) {
+function getEquipment($, profile) {
     let equipment = {};
     let dataKey;    // data-item 속성에서 추출, 값이 null이면 빈칸(미장착)
 
@@ -307,7 +307,7 @@ function GetEquipment($, profile) {
     return equipment;
 }
 // 보석 추출
-function GetJewel($, profile) {
+function getJewel($, profile) {
     let jewels = [];
 
     $('#profile-jewel > div > div.jewel__wrap').children('span').map((i, v) => {
@@ -340,7 +340,7 @@ function GetJewel($, profile) {
     return jewels;
 }
 // 카드 효과 추출
-function GetCard($) {
+function getCard($) {
     let cards = [];
 
     $('#cardSetList').children('li').map((i, v) => {
@@ -354,16 +354,16 @@ function GetCard($) {
     return cards;
 }
 // 스킬 포인트 및 세부정보 추출
-function GetSkill($) {
+function getSkill($) {
     let skill = {};
 
-    skill.point = GetSkillPoint($);
-    skill.skills = GetSkillDetail($);
+    skill.point = getSkillPoint($);
+    skill.skills = getSkillDetail($);
 
     return skill;
 }
 // 스킬 포인트 추출
-function GetSkillPoint($) {
+function getSkillPoint($) {
     let point = {};
 
     // 사용 포인트
@@ -374,9 +374,9 @@ function GetSkillPoint($) {
     return point;
 }
 // 트라이포드 등 스킬 세부정보 추출
-function GetSkillDetail($) {
+function getSkillDetail($) {
     let skills = [];
-    let profile = GetProfile($);
+    let profile = getProfile($);
     
     $('#profile-skill > div.profile-skill-battle > div.profile-skill__list').children('div').map((i, v) => {
         let level = $(v).find('a > div.profile-skill__lv > em').text();
@@ -495,13 +495,13 @@ router.get('/:nickname', (req, res) => {
 
                 info.exist = true;
                 info.name = req.params.nickname;
-                info.class = GetClass($);
-                info.server = GetServer($);
-                info.level = GetLevel($);
-                info.gameInfo = GetGameInfo($);
-                info.specialItems = GetSpecialItems($);
-                info.stats = GetStats($);
-                info.skill = GetSkill($);
+                info.class = getClass($);
+                info.server = getServer($);
+                info.level = getLevel($);
+                info.gameInfo = getGameInfo($);
+                info.specialItems = getSpecialItems($);
+                info.stats = getStats($);
+                info.skill = getSkill($);
                 res.send(info);
             }
         });

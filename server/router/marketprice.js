@@ -18,24 +18,32 @@ schedule.scheduleJob('0 */1 * * *', () => {
     (async() => {
         browser = await puppeteer.launch();
 
-        // 10렙 보석 + 에스더의 기운
         for (let item of items) {
-            let ret = await UpdateLowPrice(item);
+            let ret = await updateLowPrice(item);
             
             if (ret === false) {
                 console.log(`${item.name} update fail`);
             }
         }
-        // 각인서
-        await UpdateEngrave();
     })();
 });
 
-async function UpdateLowPrice(item) {
+function getTime() {
+    let date = new Date();
+
+    let month = String(date.getMonth() + 1).padStart(2, '0');
+    let d = String(date.getDate()).padStart(2, '0');
+    let h = String(date.getHours()).padStart(2, '0');
+    let minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${month}.${d}. ${h}:${minutes}`;
+}
+
+async function updateLowPrice(item) {
     let price;
 
     const page = await browser.newPage();
-    await webLoa.FilterResource(page);
+    await webLoa.filterResource(page);
     await page.setCookie(webLoa.cookie);
     
     if (item.type === 'market') {
@@ -45,7 +53,8 @@ async function UpdateLowPrice(item) {
         } catch (e) {
             console.log(e);
             // 쿠키 Refresh
-            await webLoa.RefreshCookie();
+            await webLoa.refreshCookie();
+            await page.setCookie(webLoa.cookie);
             await page.goto(`${URL_MARKET}&pageNo=1&grade=${item.grade}&itemName=${item.name}`);
             await page.waitForSelector('#tbodyItemList');
         }
@@ -61,7 +70,8 @@ async function UpdateLowPrice(item) {
         } catch (e) {
             console.log(e);
             // 쿠키 Refresh
-            await webLoa.RefreshCookie();
+            await webLoa.refreshCookie();
+            await page.setCookie(webLoa.cookie);
             await page.goto(`${URL_AUCTION}&pageNo=1&itemName=${item.name}`);
             await page.waitForSelector('.pagination__last');
         }
@@ -81,7 +91,8 @@ async function UpdateLowPrice(item) {
             } catch (e) {
                 console.log(e);
                 // 쿠키 Refresh
-                await webLoa.RefreshCookie();
+                await webLoa.refreshCookie();
+                await page.setCookie(webLoa.cookie);
                 await page.goto(url);
                 await page.waitForSelector('#auctionListTbody');
             }
@@ -106,11 +117,11 @@ async function UpdateLowPrice(item) {
     await page.close();
 
     if (price != null) {
-        let data = {time : new Date().toLocaleString(), price : price};
+        let data = {time : getTime(), price : price};
         db.client.collection(item.collection).insertOne(data, (err, res) => {
             if (err) return console.log(err);
 
-            console.log(`[MARKET_PRICE] ${item.name} updated at ${data.time}`);
+            console.log(`[${Date()}][MARKET_PRICE] ${item.name} updated`);
             return true;
         });
     } else {
@@ -118,83 +129,8 @@ async function UpdateLowPrice(item) {
     }
 }
 
-async function UpdateEngrave() {
-    let url = `${URL_MARKET}&pageNo=1&grade=4&itemName=각인서`;
-    let commons = [];
-    let classes = [];
-
-    const page = await browser.newPage();
-    await webLoa.FilterResource(page);
-    await page.setCookie(webLoa.cookie);
-
-    await page.goto(url);
-    try {
-        await page.waitForSelector('.pagination__last');
-    } catch (e) {
-        console.log(e);
-        // 쿠키 Refresh
-        await webLoa.RefreshCookie();
-        await page.goto(url);
-        await page.waitForSelector('.pagination__last');
-    }
-
-    let content = await page.content();
-    let $ = cheerio.load(content);
-    const pageCount = Number($('.pagination__last').attr('onclick').split(/.*?\(|\)/)[1]);
-    const pageArr = Array.from({length: pageCount}, (v, i) => i + 1);
-
-    for (let pageNo of pageArr) {
-        url = `${URL_MARKET}&pageNo=${pageNo}&grade=4&itemName=각인서`;
-
-        await page.goto(url);
-        try {
-            await page.waitForSelector('#tbodyItemList');
-        } catch (e) {
-            console.log(e);
-            // 쿠키 Refresh
-            await webLoa.RefreshCookie();
-            await page.goto(url);
-            await page.waitForSelector('#tbodyItemList');
-        }
-
-        content = await page.content();
-        $ = cheerio.load(content);
-        
-        const itemList = $('#tbodyItemList').children();
-        for (let item of itemList) {
-            let name = $(item).find('.name').text();
-            let price = $($(item).find('.price')[2]).children('em').text();
-            let engrave = {name:name, price:price};
-        
-            if (name[0] === '[') {
-                classes.push(engrave);
-            } else {
-                commons.push(engrave);
-            }
-        }
-    }
-    commons.sort((a, b) => { return b.name - a.name });
-    classes.sort((a, b) => { return b.name - a.name });
-
-    let date = new Date().toLocaleString();
-    db.client.collection('price_engrave_common').insertOne({time:date, engrave:commons}, (err, res) => {
-        if (err) return console.log(err);
-
-        console.log(`[MARKET_PRICE] engrave_common updated at ${date}`);
-    });
-    db.client.collection('price_engrave_class').insertOne({time:date, engrave:classes}, (err, res) => {
-        if (err) return console.log(err);
-
-        console.log(`[MARKET_PRICE] engrave_class updated at ${date}`);
-    });
-
-    await page.close();
-}
-
-
-// TODO
-// JSON으로 빼기?...
-function GetCollectionName(item) {
+// MAP or JSON으로 해도 될듯
+function getCollectionName(item) {
     let collection;
 
     switch (item) {
@@ -207,12 +143,6 @@ function GetCollectionName(item) {
         case 'esther':
             collection = 'price_esther';
             break;
-        case 'common':
-            collection = 'price_engrave_common';
-            break;
-        case 'class':
-            collection = 'price_engrave_class';
-            break;
         default:
             collection = null;
             break;
@@ -221,9 +151,9 @@ function GetCollectionName(item) {
     return collection;
 }
 
-router.get('/single/:item', (req, res) => {
+router.get('/:item', (req, res) => {
     let item = req.params.item;
-    const COLLECTION = GetCollectionName(item);
+    const COLLECTION = getCollectionName(item);
     
     new Promise((resolve, reject) => {
         let datas = [];
@@ -238,27 +168,7 @@ router.get('/single/:item', (req, res) => {
             resolve(datas);
         });
     }).then((datas) => {
-        res.json(datas);
-    });
-});
-router.get('/engrave/:item', (req, res) => {
-    let item = req.params.item;
-    const COLLECTION = GetCollectionName(item);
-
-    new Promise((resolve, reject) => {
-        let datas = [];
-
-        db.client.collection(COLLECTION).find().toArray((err, res) => {
-            if (err) return console.log(err);
-
-            res.map((v, i) => {
-                let data = {time:v.time, engraves:v.engrave};
-                datas.push(data);
-            });
-            resolve(datas);
-        });
-    }).then((datas) => {
-        res.json(datas);
+        res.send(datas);
     });
 });
 

@@ -5,7 +5,7 @@ const cheerio = require('cheerio');
 const webLoa = require('../web-loa.js');
 
 // 경매장에서 item의 최저가 탐색
-async function GetLowPrice(page, itemName) {
+async function getLowPrice(page, itemName) {
     let urlAuction = 'https://lostark.game.onstove.com/Auction/GetAuctionListV2?sortOption.Sort=BUY_PRICE&sortOption.IsDesc=false';
     let result = {};
 
@@ -15,7 +15,7 @@ async function GetLowPrice(page, itemName) {
     } catch (e) {
         console.log(e);
         // 쿠키 Refresh
-        await webLoa.RefreshCookie();
+        await webLoa.refreshCookie();
     }
     
     let content = await page.content();
@@ -51,7 +51,7 @@ async function GetLowPrice(page, itemName) {
 }
 
 // 거래소에서 item 최저가 탐색
-async function GetPrice(page, itemName, grade) {
+async function getPrice(page, itemName, grade) {
     let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=1&isInit=false&sortType=7&itemName=${itemName}`;
 
     await page.goto(url);
@@ -60,7 +60,7 @@ async function GetPrice(page, itemName, grade) {
     } catch (e) {
         console.log(e);
         // 쿠키 Refresh
-        await webLoa.RefreshCookie();
+        await webLoa.refreshCookie();
     }
     
     const content = await page.content();
@@ -75,7 +75,7 @@ async function GetPrice(page, itemName, grade) {
     return result;
 }
 // 거래소에서 검색 결과로 나온 모든 각인서들의 최저가 탐색
-async function GetPriceEngraves(page, grade) {
+async function getPriceEngraves(page, grade) {
     let results = [];
     let url = `https://lostark.game.onstove.com/Market/List_v2?firstCategory=0&secondCategory=0&tier=0&grade=${grade}&pageNo=1&isInit=false&sortType=7&itemName=각인서`;
 
@@ -85,7 +85,7 @@ async function GetPriceEngraves(page, grade) {
     } catch (e) {
         console.log(e);
         // 쿠키 Refresh
-        await webLoa.RefreshCookie();
+        await webLoa.refreshCookie();
     }
 
     // 탐색해야할 page의 갯수를 구한 뒤 모든 page에 대해서 탐색
@@ -130,14 +130,14 @@ router.get('/auction', (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        await webLoa.FilterResource(page);
+        await webLoa.filterResource(page);
         await page.setCookie(webLoa.cookie);
 
         let items = req.query.items;
         let results = [];
 
         for (let item of items) {
-            let result = await GetLowPrice(page, item);
+            let result = await getLowPrice(page, item);
             if (result != null) {
                 results.push(result);
             }
@@ -155,14 +155,14 @@ router.get('/market', (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        await webLoa.FilterResource(page);
+        await webLoa.filterResource(page);
         await page.setCookie(webLoa.cookie);
 
         let items = req.query.items;
         let results = [];
 
         for (let item of items) {
-            let result = await GetPrice(page, item, 99);
+            let result = await getPrice(page, item, 99);
             if (result != null) {
                 results.push(result);
             }
@@ -180,10 +180,10 @@ router.get('/engravesCommon4', (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        await webLoa.FilterResource(page);
+        await webLoa.filterResource(page);
         await page.setCookie(webLoa.cookie);
 
-        let engraves = await GetPriceEngraves(page, 4);
+        let engraves = await getPriceEngraves(page, 4);
         let results = [];
 
         for (let engrave of engraves) {
@@ -204,10 +204,10 @@ router.get('/engravesClass4', (req, res) => {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        await webLoa.FilterResource(page);
+        await webLoa.filterResource(page);
         await page.setCookie(webLoa.cookie);
 
-        let engraves = await GetPriceEngraves(page, 4);
+        let engraves = await getPriceEngraves(page, 4);
         let results = [];
 
         for (let engrave of engraves) {
