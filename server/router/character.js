@@ -7,6 +7,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 const URL_PROFILE = 'https://lostark.game.onstove.com/Profile/Character/';
+const URL_COLLECTION = 'https://lostark.game.onstove.com/Profile/GetCollection';
 
 function getProfile($) {
     let profile;
@@ -250,7 +251,9 @@ function getEquipment($, profile) {
         });
         // style관련 태그를 제거
         effects.map((v, i) => {
-            let styleRemoved = v.split(/\[.*?\]|\<.*?\>/);
+            //let styleRemoved = v.split(/\[.*?\]|\<.*?\>/);
+            v = v.replace(/\]/g, ' :');
+            let styleRemoved = v.split(/\<.*?\>|\[/);
             
             // style관련 태그 제거 후 분리된 문자열들을 다시 합침
             let result = '';
@@ -437,6 +440,74 @@ function getSkillDetail($) {
 
     return skills;
 }
+// 수집품 추출을 위한 parameter(memberNo) 추출
+function getMemberNo($) {
+    let rawData = $('script')[12].children[0].data.trim().split(/_memberNo = \'|\'\;/);
+    return rawData[1];
+}
+// 수집품 추출을 위한 parameter(pcId) 추출
+function getPcId($) {
+    let rawData = $('script')[12].children[0].data.trim().split(/_pcId = \'|\'\;/);
+    return rawData[2];
+}
+// 수집품 추출을 위한 parameter(worldNo) 추출
+function getWorldNo($) {
+    let rawData = $('script')[12].children[0].data.trim().split(/_worldNo = \'|\'\;/);
+    return rawData[3];
+}
+// 수집품 정보 추출
+function getCollection($) {
+    const lists = ['island', 'star', 'heart', 'art', 'seed', 'voyage', 'medal', 'tree'];
+    let collections = {};
+    let i = 1;
+
+    for (let name of lists) {
+        let selectorNow = `#lui-tab1-${i} > div > div.collection-list > div > p > span.now-count`;
+        let selectorMax = `#lui-tab1-${i} > div > div.collection-list > div > p > span.max-count`;
+        let selectorList = `#lui-tab1-${i} > div > div.collection-list > ul`;
+        let collection = {};
+
+        // 수집 포인트
+        collection.point = {};
+        collection.point.now = $(selectorNow).text();
+        collection.point.max = $(selectorMax).text();
+        // 수집 목록
+        collection.list = [];
+        $(selectorList).children('li').map((j, li) => {
+            let element = {};
+
+            // 모코코 씨앗 외 : { name, acquire }
+            if (i != 5) {
+                let replace = j + 1;
+                let regex = new RegExp(replace);
+
+                element.name = $(li).text().replace(regex, '').split(' 획득')[0];
+                if ($(li).attr('class') != null) {
+                    element.acquire = true;
+                } else {
+                    element.acquire = false;
+                }
+            } else {
+                // 모코코 씨앗 정보 : { continent, now, max }
+                element.now = $(li).find('em > span:nth-child(1)').text();
+                element.max = $(li).find('em > span:nth-child(2)').text();
+                
+                let replace = j + 1;
+                let regex = new RegExp(replace);
+                element.continent = $(li).text().replace(/\n/g, '').trim().replace(regex, '');
+                replace = element.now;
+                regex = new RegExp(replace);
+                element.continent = element.continent.split(regex)[0].trim();
+            }
+            collection.list.push(element);
+        });
+
+        collections[name] = collection;
+        i++;
+    }
+
+    return collections;
+}
 
 /*
 반환 객체 형식
@@ -472,6 +543,16 @@ function getSkillDetail($) {
             tripods[] : {name, level}, 
             rune : {dataGrade, imgSrc, name, effect}
         }
+    },
+    collection : {
+        island : { point : {now, max}, list : [...{name, acquire}] },
+        star : { point : {now, max}, list : [...{name, acquire}] },
+        heart : { point : {now, max}, list : [...{name, acquire}] },
+        art : { point : {now, max}, list : [...{name, acquire}] },
+        seed : { point : {now, max}, list : [...{continent, now, max}] },
+        voyage : { point : {now, max}, list : [...{name, acquire}] },
+        medal : { point : {now, max}, list : [...{name, acquire}] },
+        tree : { point : {now, max}, list : [...{name, acquire}] }
     }
 }
 */
@@ -480,6 +561,7 @@ router.get('/:nickname', (req, res) => {
 
     if (req.params.nickname != null) {
         let url = URL_PROFILE + encodeURI(req.params.nickname);
+        let collectionParam = {};
 
         axios.get(url).then((result) => {
             let html = result.data;
@@ -502,7 +584,22 @@ router.get('/:nickname', (req, res) => {
                 info.specialItems = getSpecialItems($);
                 info.stats = getStats($);
                 info.skill = getSkill($);
-                res.send(info);
+
+                collectionParam.memberNo = getMemberNo($);
+                collectionParam.worldNo = getWorldNo($);
+                collectionParam.pcId = getPcId($);
+
+                url = URL_COLLECTION;
+                axios.post(url, collectionParam).then((result) => {
+                    html = result.data;
+                    $ = cheerio.load(html);
+
+                    // DEBUG
+                    fs.writeFileSync('../../temp/collection.html', html, 'utf-8');
+
+                    info.collection = getCollection($);
+                    res.send(info);
+                });
             }
         });
     } else {
