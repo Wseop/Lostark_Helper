@@ -6,6 +6,7 @@ import Navigation from './components/Navigation.js';
 import ContentRaid from './components/ContentRaid.js';
 import Profile from './components/Profile.js';
 import Exchange from './components/Exchange.js';
+import PriceChart from './components/PriceChart.js';
 
 function App() {
   return (
@@ -15,6 +16,9 @@ function App() {
 
         <div className="Content">
           <Switch>
+          <Route exact path='/pricechart'>
+              <PriceChart />
+            </Route>
             <Route exact path='/exchange'>
               <Exchange />
             </Route>
