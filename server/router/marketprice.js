@@ -51,7 +51,6 @@ async function updateLowPrice(item) {
         try {
             await page.waitForSelector('#tbodyItemList');
         } catch (e) {
-            console.log(e);
             // 쿠키 Refresh
             await webLoa.refreshCookie();
             await page.setCookie(webLoa.cookie);
@@ -68,7 +67,6 @@ async function updateLowPrice(item) {
         try {
             await page.waitForSelector('.pagination__last');
         } catch (e) {
-            console.log(e);
             // 쿠키 Refresh
             await webLoa.refreshCookie();
             await page.setCookie(webLoa.cookie);
@@ -89,7 +87,6 @@ async function updateLowPrice(item) {
             try {
                 await page.waitForSelector('#auctionListTbody');
             } catch (e) {
-                console.log(e);
                 // 쿠키 Refresh
                 await webLoa.refreshCookie();
                 await page.setCookie(webLoa.cookie);

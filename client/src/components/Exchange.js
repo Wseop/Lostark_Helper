@@ -1,6 +1,7 @@
 import { React, useState, useEffect } from 'react';
 import axios from 'axios';
-import { Container, Spinner, Table, Tabs, Tab, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Container, Spinner, Table, Tabs, Tab, Row, Col, OverlayTrigger, Tooltip, Button, Modal, Alert } from 'react-bootstrap';
+import { ResponsiveLine } from '@nivo/line';
 
 import '../App.css';
 
@@ -26,6 +27,7 @@ function TableHead(props) {
 
 function TableRow(props) {
     let item = props.item;
+    const [show, setShow] = useState(false);
 
     return (
         <tr>
@@ -37,8 +39,30 @@ function TableRow(props) {
                     </Tooltip>
                 }><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></OverlayTrigger></td>
             }
-            <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="200px"><span className={"data-grade-" + item.dataGrade}>{item.name}</span></td>
-            <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="70px">{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} /></td>
+            {
+                props.chart == null ? 
+                <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="200px"><span className={"data-grade-" + item.dataGrade}>{item.name}</span></td> :
+                <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="170px"><span className={"data-grade-" + item.dataGrade} >{item.name}</span></td>
+            }
+            {
+                props.chart == null ?
+                <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="70px">{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} /></td> :
+                <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="100px">
+                    <Button variant="dark" size="sm" onClick={() => {setShow(true)}}>시세</Button>
+                    <Modal size="xl" show={show} onHide={() => {setShow(false)}} aria-labelledby="modal-price-chart">
+                        <Modal.Header closeButton id="modal-price-chart">
+                            {item.name}
+                        </Modal.Header>
+                        <Modal.Body>
+                            <HighPriceChart id={item.name} param={props.chart} />
+                            <Alert variant="secondary">
+                                시세 정보는 1시간 단위로 업데이트되며, 최대 30개까지 표시됩니다. (서버가 꺼져있을 경우 데이터 수집이 진행되지 않습니다.)
+                            </Alert>
+                        </Modal.Body>
+                    </Modal>
+                    &nbsp;&nbsp;{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} />
+                </td>
+            }
         </tr>
     )
 }
@@ -96,9 +120,9 @@ function ItemInfo(props) {
                 <TableHead category={props.category} sortDesc={sortDesc} clickSort={ClickSort}/>
                     <tbody className="table-light">
                         {
-                            itemList.map((item) => {
+                            itemList.map((item, i) => {
                                 return (
-                                    <TableRow item={item} />
+                                    <TableRow key={i} item={item} />
                                 )
                             })
                         }
@@ -118,6 +142,7 @@ function HighPrice() {
     const [itemsMarket, setItemsMarket] = useState([]);
     const [auctionLoad, setAuctionLoad] = useState(false);
     const [marketLoad, setMarketLoad] = useState(false);
+    const params = {"에스더의 기운":"esther", "10레벨 멸화의 보석":"myul", "10레벨 홍염의 보석":"hong"};
 
     useEffect(() => {
         axios.get('http://localhost:8942/exchange/auction', {
@@ -164,16 +189,16 @@ function HighPrice() {
                 <TableHead />
                 <tbody className="table-light">
                     {
-                        itemsAuction.map((item) => {
+                        itemsAuction.map((item, i) => {
                             return (
-                                <TableRow item={item} />
+                                <TableRow key={i} item={item} chart={params[item.name]}/>
                             )
                         })
                     }
                     {
-                        itemsMarket.map((item) => {
+                        itemsMarket.map((item, i) => {
                             return (
-                                <TableRow item={item} />
+                                <TableRow key={i} item={item} chart={params[item.name]}/>
                             )
                         })
                     }
@@ -186,6 +211,81 @@ function HighPrice() {
         )
     }
 }
+
+const PriceChart = (props) => (
+    <ResponsiveLine
+        data={props.data}
+        margin={{ top: 50, right: 60, bottom: 50, left: 80 }}
+        xScale={{ type: 'point' }}
+        yScale={{
+            type: 'linear',
+            min: 'auto',
+            max: 'auto',
+            stacked: false,
+            reverse: false
+        }}
+        axisTop={null}
+        axisRight={null}
+        axisBottom={{
+            orient: 'bottom',
+            tickSize: 5,
+            tickPadding: 5,
+            tickRotation: 40,
+            legendOffset: 50,
+            legendPosition: 'middle'
+        }}
+        axisLeft={{
+            orient: 'left',
+            tickSize: 1,
+            tickPadding: 1,
+            tickRotation: 0,
+            legend: '가격',
+            legendOffset: -60,
+            legendPosition: 'middle'
+        }}
+        colors={{ scheme: 'category10' }}
+        pointSize={10}
+        pointColor={{ from: 'color', modifiers: [] }}
+        pointBorderWidth={2}
+        pointBorderColor={{ from: 'serieColor' }}
+        pointLabelYOffset={-12}
+        useMesh={true}
+    />
+)
+
+const HighPriceChart = (props) => {
+    const URL_MARKETPRICE = "http://localhost:8942/marketprice/";
+    //let data = [];
+    const [data, setData] = useState([]);
+    const [dataLoaded, setDataLoaded] = useState(false);
+
+    useEffect(async () => {
+        let newData = [];
+        let item = {};
+
+        item.id = props.id;
+        item.data = [];
+        await axios.get(URL_MARKETPRICE + props.param).then((result) => {
+            result.data.map((value, j) => {
+                item.data.push({x:value.time, y:Number(value.price.replace(/,/g, ''))});
+            });
+        });
+        newData.push(item);
+
+        setData([...data, ...newData]);
+        setDataLoaded(true);
+    }, []);
+
+    if (dataLoaded) {
+        return (
+            <Container className="mb-4" style={{height:"500px"}}>
+                <PriceChart data={data} />
+            </Container>
+        )
+    } else {
+        return null;
+    }
+};
 
 function Exchange() {
     let reforgingMain = [

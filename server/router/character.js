@@ -23,6 +23,20 @@ function getProfile($) {
 
     return JSON.parse(profile);
 }
+// 보유 캐릭터 리스트 추출
+function getCharacters($) {
+    let list = [];
+    
+    $('#expand-character-list > ul').children('li').map((i, li) => {
+        let character = {};
+
+        character.class = $(li).find('span > button > img').attr('alt');
+        character.name = $(li).find('span > button > span').text();
+        list.push(character);
+    });
+
+    return list;
+}
 // 직업 추출
 function getClass($) {
     let cls = {};
@@ -488,7 +502,7 @@ function getCollection($) {
                     element.acquire = false;
                 }
             } else {
-                // 모코코 씨앗 정보 : { continent, now, max }
+                // 모코코 씨앗 정보 : { now, max, continent }
                 element.now = $(li).find('em > span:nth-child(1)').text();
                 element.max = $(li).find('em > span:nth-child(2)').text();
                 
@@ -514,6 +528,7 @@ function getCollection($) {
 {
     exist,
     name,
+    characterList[] : {class, name},
     class : {name, imgSrc},
     server,
     level : {expedition, battle, itemEquip, itemMax},
@@ -549,7 +564,7 @@ function getCollection($) {
         star : { point : {now, max}, list : [...{name, acquire}] },
         heart : { point : {now, max}, list : [...{name, acquire}] },
         art : { point : {now, max}, list : [...{name, acquire}] },
-        seed : { point : {now, max}, list : [...{continent, now, max}] },
+        seed : { point : {now, max}, list : [...{now, max, continent}] },
         voyage : { point : {now, max}, list : [...{name, acquire}] },
         medal : { point : {now, max}, list : [...{name, acquire}] },
         tree : { point : {now, max}, list : [...{name, acquire}] }
@@ -577,6 +592,7 @@ router.get('/:nickname', (req, res) => {
 
                 info.exist = true;
                 info.name = req.params.nickname;
+                info.characterList = getCharacters($);
                 info.class = getClass($);
                 info.server = getServer($);
                 info.level = getLevel($);
