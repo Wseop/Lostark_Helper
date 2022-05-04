@@ -107,3 +107,7 @@ body {
 .jewelDetail > .tooltip-inner {
   max-width: 100%;
 }
+
+.hoverable:hover {
+  background-color: gray;
+}

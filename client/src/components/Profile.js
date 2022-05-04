@@ -1,23 +1,26 @@
 import { React, useEffect, useState } from 'react';
-import { Container, InputGroup, FormControl, Button, Row, Col, Tabs, Tab, Tooltip, OverlayTrigger, ProgressBar } from 'react-bootstrap';
+import { Container, InputGroup, FormControl, Button, Row, Col, Tabs, Tab, OverlayTrigger, ProgressBar, Modal } from 'react-bootstrap';
 import axios from 'axios';
 import '../App.css';
+import classIcon from './classIcon.js';
 
 const URL_GET_CHARACTER = 'http://localhost:8942/character';
 
+const Search = (props) => {
+    axios.get(`${URL_GET_CHARACTER}/${props.name}`)
+    .then((result) => {
+        props.setInfo(result.data);
+        if (props.setName != null) {
+            props.setName('');
+        }
+    })
+    .catch((err) => {
+        console.log(err);
+    });
+};
+
 function SearchCharacter(props) {
     const [name, setName] = useState('');
-
-    const Search = () => {
-        axios.get(`${URL_GET_CHARACTER}/${name}`)
-        .then((result) => {
-            props.setInfo(result.data);
-            setName('');
-        })
-        .catch((err) => {
-            console.log(err);
-        });
-    };
 
     return (
         <InputGroup className="mt-3 mb-3">
@@ -27,10 +30,10 @@ function SearchCharacter(props) {
                 }} 
                 onKeyPress={(event) => {
                 if (event.key === 'Enter') { 
-                    Search(); 
+                    Search({name:name, setInfo:props.setInfo, setName:setName}); 
                 }
             }}/>
-            <Button variant="secondary" onClick={() => {Search()}}>검색</Button>
+            <Button variant="secondary" onClick={() => {Search({name:name, setInfo:props.setInfo, setName:setName})}}>검색</Button>
         </InputGroup>
     )
 }
@@ -39,11 +42,70 @@ function CharacterInfo(props) {
     const info = props.info;
 
     const Title = () => {
+        const characters = info.characterList;
+        const [listShow, setListShow] = useState(false);
+
+        const CharacterList = () => {
+            let length = characters.length;
+
+            return (
+                [...Array(parseInt(((length - 1) / 3) + 1))].map((v, i) => {
+                    return (
+                        <Row key={i}>
+                            {
+                                [...Array(3)].map((u, j) => {
+                                    let index = i * 3 + j;
+
+                                    if (index >= length) {
+                                        return <Col key={j} className="pt-2 pb-2"></Col>
+                                    } else {
+                                        return (
+                                            <Col key={j} className="hoverable pt-2 pb-2" style={{cursor:"pointer"}} onClick={() => {
+                                                    Search({name:characters[i * 3 + j].name, setInfo:props.setInfo})
+                                                }}>
+                                                <Row className="align-items-center text-center">
+                                                    {
+                                                        classIcon[characters[i * 3 + j].class] == null ? <Col xs={1} className="ps-5 pe-0" style={{height:"46px"}}></Col> :
+                                                        <Col xs={1} className="ps-5 pe-0"><img src={classIcon[characters[i * 3 + j].class]} height="46px"/></Col>
+                                                    }
+                                                    <Col className="ps-0"><span>{characters[i * 3 + j].name}</span></Col>
+                                                </Row>
+                                            </Col>
+                                        )
+                                    }
+                                })
+                            }
+                            <hr className="m-0" />
+                        </Row>
+                    )
+                })
+            )
+        }
+
         return (
             <Container className="p-1 bg-dark text-light">
-                <img src={info.class.imgSrc} />
-                <span className="fw-bold">&nbsp;{info.name}</span>
-                <span className="fw-bold text-warning">&nbsp;{info.server}</span>
+                <Row className="align-items-center">
+                    <Col></Col>
+                    <Col>
+                        <img src={info.class.imgSrc} />
+                        <span className="fw-bold">&nbsp;{info.name}</span>
+                        <span className="fw-bold text-warning">&nbsp;{info.server}</span>
+                    </Col>
+                    <Col className="text-end">
+                        <span className="me-3 fw-bold" style={{cursor:"pointer"}} onClick={() => setListShow(true)}>보유 캐릭터 ▼</span>
+
+                        <Modal size="xl" show={listShow} onHide={() => {setListShow(false)}} aria-labelledby="modal-character-list">
+                            <Modal.Header className="bg-dark text-light fw-bold" closeButton id="modal-character-list">
+                                <span >보유 캐릭터&nbsp;({characters.length})</span>
+                            </Modal.Header>
+                            <Modal.Body className="pt-0 pb-1 bg-dark text-light fw-bold text-start">
+                                {
+                                    characters.length == null ? null : <CharacterList />
+                                }
+                            </Modal.Body>
+                        </Modal>
+                    </Col>
+                </Row>
             </Container>
         )
     };
@@ -796,7 +858,7 @@ function CharacterInfo(props) {
             };
             const Detail = () => {
                 return (
-                    <Container className="m-0 p-0 pt-2 ps-2 pe-2 bg-dark bg-gradient text-light text-start" style={{height:"535px", overflowY:"scroll" }}>
+                    <Container className="m-0 p-0 pt-2 ps-2 pe-2 bg-dark text-light text-start" style={{height:"536px", overflowY:"scroll" }}>
                         {
                             detail.map((element, i) => {
                                 return (
@@ -913,7 +975,7 @@ function Profile() {
             <SearchCharacter setInfo={setInfo}/>
             {
                 info.exist == null  ? null : 
-                info.exist === true ? <CharacterInfo info={info} /> : 
+                info.exist === true ? <CharacterInfo info={info} setInfo={setInfo}/> : 
                                       <NotFound />
             }
         </Container>
