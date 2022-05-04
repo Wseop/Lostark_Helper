@@ -145,7 +145,7 @@ function HighPrice() {
     const params = {"에스더의 기운":"esther", "10레벨 멸화의 보석":"myul", "10레벨 홍염의 보석":"hong"};
 
     useEffect(() => {
-        axios.get('http://localhost:8942/exchange/auction', {
+        axios.get(`${process.env.REACT_APP_URL_SERVER}/exchange/auction`, {
             params: {
                 items: ['10레벨 멸화', '10레벨 홍염']
             }
@@ -164,7 +164,7 @@ function HighPrice() {
         })
     }, []);
     useEffect(() => {
-        axios.get('http://localhost:8942/exchange/market', {
+        axios.get(`${process.env.REACT_APP_URL_SERVER}/exchange/market`, {
             params: {
                 items: ['에스더'],
             }
@@ -254,7 +254,7 @@ const PriceChart = (props) => (
 )
 
 const HighPriceChart = (props) => {
-    const URL_MARKETPRICE = "http://localhost:8942/marketprice/";
+    const URL_MARKETPRICE = `${process.env.REACT_APP_URL_SERVER}/marketprice/`;
     //let data = [];
     const [data, setData] = useState([]);
     const [dataLoaded, setDataLoaded] = useState(false);
@@ -307,10 +307,10 @@ function Exchange() {
     let etc = [
         '신호탄', '성스러운 부적', '빛나는 성스러운 부적', '만능 물약', '빛나는 만능 물약', '페로몬 폭탄', '시간 정지 물약', '각성 물약', '아드로핀 물약', '신속 로브', '빛나는 신속 로브'
     ];
-    const marketUrl = 'http://localhost:8942/exchange/market';
-    const auctionUrl = 'http://localhost:8942/exchange/auction';
-    const engraveCommonUrl = 'http://localhost:8942/exchange/engravesCommon4';
-    const engraveClassUrl = 'http://localhost:8942/exchange/engravesClass4';
+    const marketUrl = `${process.env.REACT_APP_URL_SERVER}/exchange/market`;
+    const auctionUrl = `${process.env.REACT_APP_URL_SERVER}/exchange/auction`;
+    const engraveCommonUrl = `${process.env.REACT_APP_URL_SERVER}/exchange/engravesCommon4`;
+    const engraveClassUrl = `${process.env.REACT_APP_URL_SERVER}/exchange/engravesClass4`;
 
     return (
         <Container className="mt-3">

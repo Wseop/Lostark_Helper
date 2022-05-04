@@ -4,9 +4,9 @@ import axios from 'axios';
 import '../App.css';
 import classIcon from './classIcon.js';
 
-const URL_GET_CHARACTER = 'http://localhost:8942/character';
-
 const Search = (props) => {
+    const URL_GET_CHARACTER = `${process.env.REACT_APP_URL_SERVER}/character`;
+
     axios.get(`${URL_GET_CHARACTER}/${props.name}`)
     .then((result) => {
         props.setInfo(result.data);
