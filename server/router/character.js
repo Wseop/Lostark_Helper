@@ -19,7 +19,7 @@ function getProfile($) {
     profile = $('script')[2].children[0].data.split('$.Profile = ')[1].split(';')[0];
 
     // DEBUG
-    fs.writeFileSync('../../temp/profile.json', profile, 'utf-8');
+    //fs.writeFileSync('../../temp/profile.json', profile, 'utf-8');
 
     return JSON.parse(profile);
 }
@@ -588,7 +588,7 @@ router.get('/:nickname', (req, res) => {
                 res.send(info);
             } else {
                 // DEBUG
-                fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
+                //fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
 
                 info.exist = true;
                 info.name = req.params.nickname;
@@ -611,7 +611,7 @@ router.get('/:nickname', (req, res) => {
                     $ = cheerio.load(html);
 
                     // DEBUG
-                    fs.writeFileSync('../../temp/collection.html', html, 'utf-8');
+                    //fs.writeFileSync('../../temp/collection.html', html, 'utf-8');
 
                     info.collection = getCollection($);
                     res.send(info);
