@@ -8,3 +8,5 @@
 React 기반으로 구현하였습니다.
 ## Server
 Nodejs 기반으로 구현하였으며 DB는 MongoDB(NoSQL)을 사용하였습니다.
+<hr />
+	구현 세부사항은 commit comment를 참고해주세요.
