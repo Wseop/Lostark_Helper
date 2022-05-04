@@ -16,7 +16,11 @@ const items = JSON.parse(fs.readFileSync(__dirname + '/../data/marketprice.json'
 
 schedule.scheduleJob('0 */1 * * *', () => {
     (async() => {
-        browser = await puppeteer.launch();
+        browser = await puppeteer.launch(
+            {
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            }
+        );
 
         for (let item of items) {
             let ret = await updateLowPrice(item);

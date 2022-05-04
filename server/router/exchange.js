@@ -127,7 +127,11 @@ async function getPriceEngraves(page, grade) {
 // 경매장 데이터 전달
 router.get('/auction', (req, res) => {
     (async() => {
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch(
+            {
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            }
+        );
         const page = await browser.newPage();
 
         await webLoa.filterResource(page);
@@ -152,7 +156,11 @@ router.get('/auction', (req, res) => {
 // 거래소 데이터 전달
 router.get('/market', (req, res) => {
     (async() => {
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch(
+            {
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            }
+        );
         const page = await browser.newPage();
 
         await webLoa.filterResource(page);
@@ -177,7 +185,11 @@ router.get('/market', (req, res) => {
 // 전설 각인서 - 공용 검색
 router.get('/engravesCommon4', (req, res) => {
     (async() => {
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch(
+            {
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            }
+        );
         const page = await browser.newPage();
 
         await webLoa.filterResource(page);
@@ -201,7 +213,11 @@ router.get('/engravesCommon4', (req, res) => {
 // 전설 각인서 - 직업 검색
 router.get('/engravesClass4', (req, res) => {
     (async() => {
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch(
+            {
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            }
+        );
         const page = await browser.newPage();
 
         await webLoa.filterResource(page);

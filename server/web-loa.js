@@ -16,7 +16,11 @@ webLoa.refreshCookie = async function() {
         await browser.close();
         browser = null;
     }
-    browser = await puppeteer.launch();
+    browser = await puppeteer.launch(
+        {
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        }
+    );
     page = await browser.newPage();
     await page.goto(URL_LOGIN);
     await page.focus('#user_id');
