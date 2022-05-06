@@ -1,0 +1,32 @@
+[
+    {
+        "type":"market", "itemName":"빛나는 성스러운 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 부식 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 수면 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 파괴 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 섬광 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 냉기 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 암흑 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 점토 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 화염 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 회오리 수류탄", "grade":99
+    }
+]

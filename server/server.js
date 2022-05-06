@@ -3,7 +3,6 @@ const app = express();
 require('dotenv').config();
 require('events').EventEmitter.defaultMaxListeners = 0;
 const db = require('./db.js');
-const webLoa = require('./web-loa.js');
 
 // Error handle - Access-Control-Allow-Origin
 app.use((req, res, next) => { 
@@ -21,8 +20,5 @@ const marketPrice = require('./router/marketprice.js');
 app.use('/marketprice', marketPrice);
 
 app.listen(process.env.PORT, () => {
-  (async() => {
-    await webLoa.refreshCookie();
-    console.log('listening on ' + process.env.PORT);
-  })();
+    console.log('Listening on ' + process.env.PORT);
 });

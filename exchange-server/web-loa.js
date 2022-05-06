@@ -1,6 +1,3 @@
-// 코드 참고)
-// puppeteer 불필요한 리소스 차단 - https://gracefullight.dev/2019/07/29/increase-puppeteer-crawling-speed/
-
 const puppeteer = require('puppeteer');
 const db = require('./db.js');
 
@@ -24,9 +21,9 @@ webLoa.refreshCookie = async function() {
     page = await browser.newPage();
     await page.goto(URL_LOGIN);
     await page.focus('#user_id');
-    await page.keyboard.type(db.login_info.email);
+    await page.keyboard.type(db.loginInfo.email);
     await page.focus('#user_pwd');
-    await page.keyboard.type(db.login_info.pw);
+    await page.keyboard.type(db.loginInfo.pw);
     await page.click('#idLogin > div.row.grid.el-actions > button');
     await page.waitForNavigation();
 

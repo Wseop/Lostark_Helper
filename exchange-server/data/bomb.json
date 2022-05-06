@@ -1,0 +1,32 @@
+[
+    {
+        "type":"market", "itemName":"성스러운 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"부식 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"수면 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"파괴 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"섬광 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"냉기 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"암흑 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"점토 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"화염 수류탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"회오리 수류탄", "grade":99
+    }
+]

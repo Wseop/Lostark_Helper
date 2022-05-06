@@ -1,0 +1,50 @@
+[
+    {
+        "type":"market", "itemName":"수호석 결정", "grade":99
+    },
+    {
+        "type":"market", "itemName":"수호강석", "grade":99
+    },
+    {
+        "type":"market", "itemName":"파괴석 결정", "grade":99
+    },
+    {
+        "type":"market", "itemName":"파괴강석", "grade":99
+    },
+    {
+        "type":"market", "itemName":"명예의 파편 주머니(소)", "grade":99
+    },
+    {
+        "type":"market", "itemName":"명예의 파편 주머니(중)", "grade":99
+    },
+    {
+        "type":"market", "itemName":"명예의 파편 주머니(대)", "grade":99
+    },
+    {
+        "type":"market", "itemName":"명예의 돌파석", "grade":99
+    },
+    {
+        "type":"market", "itemName":"위대한 명예의 돌파석", "grade":99
+    },
+    {
+        "type":"market", "itemName":"경이로운 명예의 돌파석", "grade":99
+    },
+    {
+        "type":"market", "itemName":"하급 오레하 융화 재료", "grade":99
+    },
+    {
+        "type":"market", "itemName":"중급 오레하 융화 재료", "grade":99
+    },
+    {
+        "type":"market", "itemName":"상급 오레하 융화 재료", "grade":99
+    },
+    {
+        "type":"market", "itemName":"태양의 은총", "grade":99
+    },
+    {
+        "type":"market", "itemName":"태양의 축복", "grade":99
+    },
+    {
+        "type":"market", "itemName":"태양의 가호", "grade":99
+    }
+]

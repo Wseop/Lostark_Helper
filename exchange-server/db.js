@@ -1,5 +1,4 @@
 const MongoClient = require('mongodb').MongoClient;
-
 require('dotenv').config();
 
 let db = {};
@@ -8,8 +7,6 @@ MongoClient.connect(process.env.URL_DB, (err, client) => {
     if (err) return console.log(err);
 
     db['client'] = client.db(process.env.NAME_DB);
-    console.log('[DB] db connected');
-
     db.client.collection(process.env.NAME_COLLECTION_STOVEINFO).find().toArray((err, res) => {
         if (err) return console.log(err);
 
@@ -17,7 +14,8 @@ MongoClient.connect(process.env.URL_DB, (err, client) => {
         loginInfo['email'] = res[0].email;
         loginInfo['pw'] = res[0].pw;
         db['loginInfo'] = loginInfo;
-        console.log('[DB] get stove login info');
+        
+        console.log('[DB] DB Connected');
     });
 });
 

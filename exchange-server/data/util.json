@@ -1,0 +1,38 @@
+[
+    {
+        "type":"market", "itemName":"신호탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 신호탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"성스러운 부적", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 성스러운 부적", "grade":99
+    },
+    {
+        "type":"market", "itemName":"만능 물약", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 만능 물약", "grade":99
+    },
+    {
+        "type":"market", "itemName":"페로몬 폭탄", "grade":99
+    },
+    {
+        "type":"market", "itemName":"시간 정지 물약", "grade":99
+    },
+    {
+        "type":"market", "itemName":"각성 물약", "grade":99
+    },
+    {
+        "type":"market", "itemName":"아드로핀 물약", "grade":99
+    },
+    {
+        "type":"market", "itemName":"신속 로브", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 신속 로브", "grade":99
+    }
+]

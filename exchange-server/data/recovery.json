@@ -1,0 +1,14 @@
+[
+    {
+        "type":"market", "itemName":"회복약", "grade":99
+    },
+    {
+        "type":"market", "itemName":"고급 회복약", "grade":99
+    },
+    {
+        "type":"market", "itemName":"정령의 회복약", "grade":99
+    },
+    {
+        "type":"market", "itemName":"빛나는 정령의 회복약", "grade":99
+    }
+]
