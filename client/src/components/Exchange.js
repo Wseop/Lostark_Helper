@@ -206,9 +206,10 @@ const HighPriceChart = (props) => {
                 item.data.push({x:elements[i].time, y:Number(elements[i].price.replace(/,/g, ''))});
             }
         });
+        item.data = item.data.reverse();
         newData.push(item);
 
-        setData([...data, ...newData.reverse()]);
+        setData([...data, ...newData]);
         setDataLoaded(true);
     }, []);
 
@@ -227,7 +228,7 @@ function Exchange() {
     return (
         <Container className="mt-3">
             <Alert variant="secondary">
-                서버 상황에 따라 실시간 가격과 차이가 있을 수 있습니다.
+                서버 상태에 따라 실시간 가격과 차이가 있을 수 있습니다.
             </Alert>
             <Tabs defaultActiveKey="에스더" className="mt-3 fs-7 text-dark fw-bold">
                 <Tab eventKey="에스더" title="에스더 / 10렙 보석">
