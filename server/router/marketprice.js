@@ -6,8 +6,8 @@ require('dotenv').config();
 
 const collections = JSON.parse(fs.readFileSync(__dirname + '/../data/item-collection.json', 'utf-8'));
 
-router.get('/:itemName', (req, res) => {
-    let itemName = req.params.itemName;
+router.get('/', (req, res) => {
+    let itemName = req.query.itemName;
     const collection = collections[itemName];
     
     new Promise((resolve, reject) => {

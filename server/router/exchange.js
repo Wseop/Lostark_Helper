@@ -3,8 +3,8 @@ const router = express.Router();
 const db = require('../db.js');
 require('dotenv').config();
 
-router.get('/:category', (req, res) => {
-    const category = req.params.category;
+router.get('/', (req, res) => {
+    const category = req.query.category;
 
     db.client.collection(process.env.NAME_COLLECTION_EXCHANGE).findOne({category:category}, (err, result) => {
         if (err) return console.log(err);
