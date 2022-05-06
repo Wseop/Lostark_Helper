@@ -4,8 +4,9 @@
 2. 거래소 최저가 조회 및 시세 조회
 3. 레이드 헬퍼
 
-## Client
-React 기반으로 구현하였습니다.
-## Server
-Nodejs 기반으로 구현하였으며 DB는 MongoDB(NoSQL)을 사용하였습니다.
-
+## client
+React로 구현하였습니다.
+## server
+Nodejs로 구현하였으며 DB는 MongoDB(NoSQL)을 사용하였습니다.
+## exchange-server
+사용 기술은 server와 동일합니다.
