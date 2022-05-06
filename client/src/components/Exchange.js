@@ -29,70 +29,75 @@ function TableRow(props) {
     let item = props.item;
     const [show, setShow] = useState(false);
 
-    return (
-        <tr>
-            {
-                item.effect == null ? <td><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></td> :
-                <td><OverlayTrigger key="right" placement="right" overlay={
-                    <Tooltip>
-                        <div id="tooltip-content" dangerouslySetInnerHTML={{__html:item.effect}}></div>
-                    </Tooltip>
-                }><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></OverlayTrigger></td>
-            }
-            {
-                props.chart == null ? 
-                <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="200px"><span className={"data-grade-" + item.dataGrade}>{item.name}</span></td> :
-                <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="170px"><span className={"data-grade-" + item.dataGrade} >{item.name}</span></td>
-            }
-            {
-                props.chart == null ?
-                <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="70px">{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} /></td> :
-                <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="100px">
-                    <Button variant="dark" size="sm" onClick={() => {setShow(true)}}>시세</Button>
-                    <Modal size="xl" show={show} onHide={() => {setShow(false)}} aria-labelledby="modal-price-chart">
-                        <Modal.Header closeButton id="modal-price-chart">
-                            {item.name}
-                        </Modal.Header>
-                        <Modal.Body>
-                            <HighPriceChart id={item.name} param={props.chart} />
-                            <Alert variant="secondary">
-                                시세 정보는 1시간 단위로 업데이트되며, 최대 30개까지 표시됩니다. (서버가 꺼져있을 경우 데이터 수집이 진행되지 않습니다.)
-                            </Alert>
-                        </Modal.Body>
-                    </Modal>
-                    &nbsp;&nbsp;{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} />
-                </td>
-            }
-        </tr>
-    )
+    if (item.dataGrade != null) {
+        return (
+            <tr>
+                {
+                    item.effect == null ? <td><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></td> :
+                    <td><OverlayTrigger key="right" placement="right" overlay={
+                        <Tooltip>
+                            <div id="tooltip-content" dangerouslySetInnerHTML={{__html:item.effect}}></div>
+                        </Tooltip>
+                    }><img className="border border-secondary m-1" src={item.imgSrc} width="50px"/></OverlayTrigger></td>
+                }
+                {
+                    props.chart === false ? 
+                    <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="200px"><span className={"data-grade-" + item.dataGrade}>{item.name}</span></td> :
+                    <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="170px"><span className={"data-grade-" + item.dataGrade} >{item.name}</span></td>
+                }
+                {
+                    props.chart === false ?
+                    <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="70px">{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} /></td> :
+                    <td className="fs-7 text-dark mb-3 fw-bold align-middle" width="100px">
+                        <Button variant="dark" size="sm" onClick={() => {setShow(true)}}>시세</Button>
+                        <Modal size="xl" show={show} onHide={() => {setShow(false)}} aria-labelledby="modal-price-chart">
+                            <Modal.Header closeButton id="modal-price-chart">
+                                {item.name}
+                            </Modal.Header>
+                            <Modal.Body>
+                                <HighPriceChart id={item.name} />
+                                <Alert variant="secondary">
+                                    시세 정보는 1시간 단위로 업데이트되며, 최대 30개까지 표시됩니다. (서버가 꺼져있을 경우 데이터 수집이 진행되지 않습니다.)
+                                </Alert>
+                            </Modal.Body>
+                        </Modal>
+                        &nbsp;&nbsp;{item.price} <img src={process.env.PUBLIC_URL + "/img/gold.png"} />
+                    </td>
+                }
+            </tr>
+        )
+    } else {
+        return null;
+    }
 }
 
 function ItemInfo(props) {
-    const [itemList, setItemList] = useState([]);
-    const [itemLoad, setItemLoad] = useState(false);
+    const [items, setItems] = useState([]);
+    const [isItemLoaded, setIsItemLoaded] = useState(false);
     const [sortDesc, setSortDesc] = useState(null);
+    const urlExchange = process.env.REACT_APP_URL_SERVER + '/exchange';
 
     useEffect(() => {
-        axios.get(props.url, {
+        axios.get(urlExchange, {
             params: {
-                items: props.items
+                category: props.category
             }
         })
         .then((result) => {
-            let items = [];
+            let newItems = [];
 
             result.data.map((item) => {
-                items.push(item);
+                newItems.push(item);
             });
-            setItemList([...itemList, ...items]);
-            setItemLoad(true);
+            setItems([...items, ...newItems]);
+            setIsItemLoaded(true);
         })
         .catch((err) => {
-            console.log('[ERR] : ' + err);
+            console.log('[Exchange] | [ItemInfo] | ' + err);
         })
     }, []);
     useEffect(() => {
-        let sortedItem = [...itemList];
+        let sortedItem = [...items];
 
         if (sortDesc) {
             sortedItem.sort((a, b) => {
@@ -103,7 +108,7 @@ function ItemInfo(props) {
                 return Number(a.price.replace(/,/g, "")) - Number(b.price.replace(/,/g, ""));
             });
         }
-        setItemList([...sortedItem]);
+        setItems([...sortedItem]);
     }, [sortDesc]);
 
     function ClickSort() {
@@ -114,15 +119,15 @@ function ItemInfo(props) {
         }
     }
 
-    if (itemLoad) {
+    if (isItemLoaded) {
         return (
             <Table className="mt-3 mx-auto" hover variant="dark" width="350px">
-                <TableHead category={props.category} sortDesc={sortDesc} clickSort={ClickSort}/>
+                <TableHead sortDesc={sortDesc} clickSort={ClickSort}/>
                     <tbody className="table-light">
                         {
-                            itemList.map((item, i) => {
+                            items.map((item, i) => {
                                 return (
-                                    <TableRow key={i} item={item} />
+                                    <TableRow key={i} item={item} chart={props.chart}/>
                                 )
                             })
                         }
@@ -135,81 +140,6 @@ function ItemInfo(props) {
         )
     }
     
-}
-
-function HighPrice() {
-    const [itemsAuction, setItemsAuction] = useState([]);
-    const [itemsMarket, setItemsMarket] = useState([]);
-    const [auctionLoad, setAuctionLoad] = useState(false);
-    const [marketLoad, setMarketLoad] = useState(false);
-    const params = {"에스더의 기운":"esther", "10레벨 멸화의 보석":"myul", "10레벨 홍염의 보석":"hong"};
-
-    useEffect(() => {
-        axios.get(`${process.env.REACT_APP_URL_SERVER}/exchange/auction`, {
-            params: {
-                items: ['10레벨 멸화', '10레벨 홍염']
-            }
-        })
-        .then((result) => {
-            let jewels = [];
-
-            result.data.map((item) => {
-                jewels.push(item);
-            });
-            setItemsAuction([...itemsAuction, ...jewels]);
-            setAuctionLoad(true);
-        })
-        .catch((err) => {
-            console.log('[ERR] : ' + err);
-        })
-    }, []);
-    useEffect(() => {
-        axios.get(`${process.env.REACT_APP_URL_SERVER}/exchange/market`, {
-            params: {
-                items: ['에스더'],
-            }
-        })
-        .then((result) => {
-            let esther = [];
-
-            result.data.map((item) => {
-                esther.push(item);
-            });
-            setItemsMarket([...itemsMarket, ...esther]);
-            setMarketLoad(true);
-        })
-        .catch((err) => {
-            console.log('[ERR] : ' + err);
-        })
-    }, []);
-
-    if (auctionLoad && marketLoad) {
-        return (
-            <Table className="mt-3 w-75 mx-auto" hover variant="dark">
-                <TableHead />
-                <tbody className="table-light">
-                    {
-                        itemsAuction.map((item, i) => {
-                            return (
-                                <TableRow key={i} item={item} chart={params[item.name]}/>
-                            )
-                        })
-                    }
-                    {
-                        itemsMarket.map((item, i) => {
-                            return (
-                                <TableRow key={i} item={item} chart={params[item.name]}/>
-                            )
-                        })
-                    }
-                </tbody>
-            </Table>
-        )
-    } else {
-        return (
-            <Spinner animation="border" variant="dark" className="mt-3"/>
-        )
-    }
 }
 
 const PriceChart = (props) => (
@@ -254,10 +184,9 @@ const PriceChart = (props) => (
 )
 
 const HighPriceChart = (props) => {
-    const URL_MARKETPRICE = `${process.env.REACT_APP_URL_SERVER}/marketprice/`;
-    //let data = [];
     const [data, setData] = useState([]);
     const [dataLoaded, setDataLoaded] = useState(false);
+    const urlMarketprice = process.env.REACT_APP_URL_SERVER + '/marketprice';
 
     useEffect(async () => {
         let newData = [];
@@ -265,14 +194,21 @@ const HighPriceChart = (props) => {
 
         item.id = props.id;
         item.data = [];
-        await axios.get(URL_MARKETPRICE + props.param).then((result) => {
-            result.data.map((value, j) => {
-                item.data.push({x:value.time, y:Number(value.price.replace(/,/g, ''))});
-            });
+        await axios.get(urlMarketprice, {
+            params: {
+                itemName:props.id
+            }
+        }).then((result) => {
+            let elements = result.data.reverse();
+
+            for (let i = 0; i < 30; i++) {
+                if (i >= elements.length) break;
+                item.data.push({x:elements[i].time, y:Number(elements[i].price.replace(/,/g, ''))});
+            }
         });
         newData.push(item);
 
-        setData([...data, ...newData]);
+        setData([...data, ...newData.reverse()]);
         setDataLoaded(true);
     }, []);
 
@@ -288,67 +224,45 @@ const HighPriceChart = (props) => {
 };
 
 function Exchange() {
-    let reforgingMain = [
-        '수호석 결정', '수호강석', '파괴석 결정', '파괴강석', '명예의 파편 주머니(소)', '명예의 파편 주머니(중)', '명예의 파편 주머니(대)',
-        '명예의 돌파석', '위대한 명예의 돌파석', '경이로운 명예의 돌파석', '하급 오레하', '중급 오레하', '상급 오레하'
-    ];
-    let reforgingSub = [
-        '태양의 은총', '태양의 축복', '태양의 가호'
-    ];
-    let health = [
-        '회복약', '고급 회복약', '정령의 회복약', '빛나는 정령의 회복약'
-    ];
-    let battle = [
-        '성스러운 폭탄', '부식 폭탄', '수면 폭탄', '파괴 폭탄', '섬광 수류탄', '냉기 수류탄', '암흑 수류탄', '점토 수류탄', '화염 수류탄', '회오리 수류탄'
-    ];
-    let battlePlus = [
-        '빛나는 성스러운 폭탄', '빛나는 부식 폭탄', '빛나는 수면 폭탄', '빛나는 파괴 폭탄', '빛나는 섬광 수류탄', '빛나는 냉기 수류탄', '빛나는 암흑 수류탄', '빛나는 점토 수류탄', '빛나는 화염 수류탄', '빛나는 회오리 수류탄'
-    ];
-    let etc = [
-        '신호탄', '성스러운 부적', '빛나는 성스러운 부적', '만능 물약', '빛나는 만능 물약', '페로몬 폭탄', '시간 정지 물약', '각성 물약', '아드로핀 물약', '신속 로브', '빛나는 신속 로브'
-    ];
-    const marketUrl = `${process.env.REACT_APP_URL_SERVER}/exchange/market`;
-    const auctionUrl = `${process.env.REACT_APP_URL_SERVER}/exchange/auction`;
-    const engraveCommonUrl = `${process.env.REACT_APP_URL_SERVER}/exchange/engravesCommon4`;
-    const engraveClassUrl = `${process.env.REACT_APP_URL_SERVER}/exchange/engravesClass4`;
-
     return (
         <Container className="mt-3">
+            <Alert variant="secondary">
+                서버 상황에 따라 실시간 가격과 차이가 있을 수 있습니다.
+            </Alert>
             <Tabs defaultActiveKey="에스더" className="mt-3 fs-7 text-dark fw-bold">
                 <Tab eventKey="에스더" title="에스더 / 10렙 보석">
-                    <HighPrice />
+                    <Container className="w-75">
+                        <ItemInfo category="valuable" chart={true} />
+                    </Container>
                 </Tab>
                 <Tab eventKey="강화 재료" title="강화 재료">
-                    <Container>
-                        <Row>
-                            <Col><ItemInfo url={marketUrl} items={reforgingMain}/></Col>
-                            <Col><ItemInfo url={marketUrl} items={reforgingSub}/></Col>
-                        </Row>
+                    <Container className="w-75">
+                        <ItemInfo category="reforge" chart={false} />
                     </Container>
                 </Tab>
                 <Tab eventKey="회복약" title="회복약">
                     <Container className="w-75">
-                        <ItemInfo url={marketUrl} items={health}/>
+                        <ItemInfo category="recovery" chart={false} />
                     </Container>
                 </Tab>
                 <Tab eventKey="폭탄 / 수류탄" title="폭탄 / 수류탄">
                     <Container>
                         <Row>
-                            <Col><ItemInfo url={marketUrl} items={battle} category="일반"/></Col>
-                            <Col><ItemInfo url={marketUrl} items={battlePlus} category="빛나는"/></Col>
+                            <Col><ItemInfo category="bomb" chart={false} /></Col>
+                            <Col><ItemInfo category="bombShine" chart={false} /></Col>
                         </Row>
                     </Container>
                 </Tab>
                 <Tab eventKey="유틸" title="유틸">
                     <Container className="w-75">
-                        <ItemInfo url={marketUrl} items={etc}/>
+                        <ItemInfo category="util" chart={false} />
                     </Container>
                 </Tab>
                 <Tab eventKey="각인서" title="각인서">
                     <Container>
                         <Row>
-                            <Col><ItemInfo url={engraveCommonUrl} items={null} category="공용"/></Col>
-                            <Col><ItemInfo url={engraveClassUrl} items={null} category="직업"/></Col>
+                            <Col><ItemInfo category="engraveCommon" chart={false} /></Col>
+                            <Col><ItemInfo category="engraveClass" chart={false} /></Col>
                         </Row>
                     </Container>
                 </Tab>
