@@ -11,7 +11,8 @@
 ## client
 React로 구현하였습니다.<br>
 아래 주소로 접속이 가능하며 호스팅을 위한 github page는 https://github.com/Wseop/LoaHelper 입니다.<br>
-https://Wseop.github.io/LoaHelper/
+https://Wseop.github.io/LoaHelper/<br>
+`알고 있는 캐릭터명이 없다면 '쿠키바닐라쉐이크'를 검색해보세요.`
 ## server
 Nodejs로 구현하였으며 DB는 MongoDB(NoSQL)을 사용하였습니다.<br>
 Heroku로 Hosting되고 있습니다 (https://seop-node-loahelper.herokuapp.com)
