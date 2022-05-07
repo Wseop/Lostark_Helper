@@ -158,13 +158,9 @@ function Abrelshud() {
 }
 
 function ContentRaid() {
-    let {id} = useParams();
-
-    if (id == 0) {
-        return (
-            <Abrelshud />
-        );
-    }
+    return (
+        <Abrelshud />
+    )
 }
 
 export default ContentRaid;

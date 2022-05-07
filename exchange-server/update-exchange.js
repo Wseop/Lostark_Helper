@@ -11,21 +11,22 @@ const time = require('./format-time.js');
 
 let exchange = {};
 const categories = ['valuable', 'reforge', 'recovery', 'bomb', 'bombShine', 'util'];
+let browser;
 
 schedule.scheduleJob('*/10 * * * *', async () => {
-    const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
-    await updateEngrave(browser);
-    for (let category of categories) {
-        await updateExchange(browser, category);
+    if (browser == null) {
+        browser = await puppeteer.launch({
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
     }
 
-    await browser.close();
+    await updateEngrave();
+    for (let category of categories) {
+        await updateExchange(category);
+    }
 });
 
-async function updateExchange(browser, category) {
+async function updateExchange(category) {
     let items = [];
     const page = await browser.newPage();
     
@@ -49,7 +50,7 @@ async function updateExchange(browser, category) {
     await page.close();
 }
 // 각인서 업데이트는 종류가 많아서 따로 구현
-async function updateEngrave(browser) {
+async function updateEngrave() {
     let engraves = [];
     const page = await browser.newPage();
 

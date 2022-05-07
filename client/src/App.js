@@ -6,6 +6,7 @@ import Navigation from './components/Navigation.js';
 import ContentRaid from './components/ContentRaid.js';
 import Profile from './components/Profile.js';
 import Exchange from './components/Exchange.js';
+import { BrowserRouter } from 'react-router-dom/cjs/react-router-dom.min';
 
 function App() {
   return (
@@ -13,19 +14,13 @@ function App() {
       <div className="App">
           <Navigation />
 
-        <div className="Content">
+        <BrowserRouter basename={process.env.URL_BASE}>
           <Switch>
-            <Route exact path='/exchange'>
-              <Exchange />
-            </Route>
-            <Route exact path="/Raid/:id">
-              <ContentRaid />
-            </Route>
-            <Route path="/">
-              <Profile />
-            </Route>
+            <Route exact path="/" component={Profile} />
+            <Route path='/exchange' component={Exchange} />
+            <Route path="/raid" component={ContentRaid} />
           </Switch>
-        </div>
+        </BrowserRouter>
       </div>
     </div>
   );

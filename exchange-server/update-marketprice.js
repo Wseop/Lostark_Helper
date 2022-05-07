@@ -11,11 +11,15 @@ const exchange = require('./update-exchange.js');
 const time = require('./format-time.js');
 
 let marketprice = {};
+let browser;
 
 schedule.scheduleJob('0 */1 * * *', async() => {
-    const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    if (browser == null) {
+        browser = await puppeteer.launch({
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+    }
+
     const page = await browser.newPage();
     await webLoa.filterResource(page);
     await page.setCookie(webLoa.cookie);
@@ -24,8 +28,6 @@ schedule.scheduleJob('0 */1 * * *', async() => {
     for (let item of items) {
         await updateMarketPrice(page, item);
     }
-
-    await browser.close();
 });
 
 async function updateMarketPrice(page, item) {
