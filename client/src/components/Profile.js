@@ -958,10 +958,6 @@ function CharacterInfo(props) {
 function Profile() {
     const [info, setInfo] = useState({});
 
-    useEffect(() => {
-        console.log(info);
-    }, [info]);
-
     const NotFound = () => {
         return (
             <Container>

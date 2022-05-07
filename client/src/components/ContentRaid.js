@@ -157,10 +157,20 @@ function Abrelshud() {
     );
 }
 
-function ContentRaid() {
-    return (
-        <Abrelshud />
-    )
+function ContentRaid(props) {
+    let [id, setId] = useState(-1);
+
+    useEffect(() => {
+        setId(props.id);
+    }, []);
+
+    if (id === 0) {
+        return (
+            <Abrelshud />
+        )
+    } else {
+        return null;
+    }
 }
 
 export default ContentRaid;
