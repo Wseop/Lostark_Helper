@@ -9,6 +9,15 @@ const fs = require('fs');
 const URL_PROFILE = 'https://lostark.game.onstove.com/Profile/Character/';
 const URL_COLLECTION = 'https://lostark.game.onstove.com/Profile/GetCollection';
 
+function getTitle($) {
+    let title = {};
+
+    title.characterList = getCharacters($);
+    title.class = getClass($);
+    title.server = getServer($);
+
+    return title;
+}
 function getProfile($) {
     let profile;
 
@@ -76,7 +85,7 @@ function getGameInfo($) {
     return gameInfo;
 }
 // 특수장비 (나침반, 부적, pvp) 추출
-function getSpecialItems($) {
+function getSpecialItem($) {
     let specialItems = [];
 
     $('#lostark-wrapper > div > main > div > div.profile-ingame > div.profile-info > div.special-info > div > ul').children('li').map((i, v) => {
@@ -91,28 +100,6 @@ function getSpecialItems($) {
     });
 
     return specialItems;
-}
-// 능력치 탭의 정보 추출
-function getStats($) {
-    let stats = {};
-    let profile = getProfile($);
-
-    // 기본 특성 (공격력, 최대 생명력)
-    stats.abilityBasic = getAbilityBasic($);
-    // 전투 특성 (치, 특, 신, 제, 인, 숙)
-    stats.abilityBattle = getAbilityBattle($);
-    // 각인 효과
-    stats.engrave = getEngrave($);
-    // 성향
-    stats.propensity = getPropensity($);
-    // 장비
-    stats.equipment = getEquipment($, profile);
-    // 보석
-    stats.jewels = getJewel($, profile);
-    // 카드
-    stats.card = getCard($);
-
-    return stats;
 }
 // 기본 특성 추출 (공격력, 최대 생명력)
 function getAbilityBasic($) {
@@ -371,11 +358,11 @@ function getCard($) {
     return cards;
 }
 // 스킬 포인트 및 세부정보 추출
-function getSkill($) {
+function getSkill($, profile) {
     let skill = {};
 
     skill.point = getSkillPoint($);
-    skill.skills = getSkillDetail($);
+    skill.skills = getSkillDetail($, profile);
 
     return skill;
 }
@@ -391,9 +378,8 @@ function getSkillPoint($) {
     return point;
 }
 // 트라이포드 등 스킬 세부정보 추출
-function getSkillDetail($) {
+function getSkillDetail($, profile) {
     let skills = [];
-    let profile = getProfile($);
     
     $('#profile-skill > div.profile-skill-battle > div.profile-skill__list').children('div').map((i, v) => {
         let level = $(v).find('a > div.profile-skill__lv > em').text();
@@ -519,64 +505,33 @@ function getCollection($) {
         collections[name] = collection;
         i++;
     }
-
     return collections;
 }
 
-/*
-반환 객체 형식
-{
-    exist,
-    name,
-    characterList[] : {class, name},
-    class : {name, imgSrc},
-    server,
-    level : {expedition, battle, itemEquip, itemMax},
-    gameInfo : {title, guild, pvp, dominion},
-    specialItems[] : {imgSrc, dataGrade, name},
-    stats : {
-        abilityBasic : {maxHp, attack, attackEngrave},
-        abilityBattle : {critical, specialization, domination, swift, endurance, expertise},
-        engrave[],
-        propensity : {intelligence, courage, charm, kindness},
-        equipment : {
-            weapon : {dataGrade, imgSrc, name, quality, effect0, effect1},
-            armors[] : {dataGrade, imgSrc, name, quality, effect0, effect1},
-            accessories[] : {dataGrade, imgSrc, name, quality, effect0, effect1, engraves[], penalty},
-            bracelet : {dataGrade, imgSrc, name, effects[]},
-            stone : {dataGrade, imgSrc, name, health[], engraves[], penalty},
-            jewels[] : {dataGrade, imgSrc, level, name, effect : {skill, effect}},
-            card[] : {title, effect}
-        }
-    },
-    skill : {
-        point : {use, total}, 
-        skills[] : {
-            level, 
-            imgSrc, 
-            name, 
-            tripods[] : {name, level}, 
-            rune : {dataGrade, imgSrc, name, effect}
-        }
-    },
-    collection : {
-        island : { point : {now, max}, list : [...{name, acquire}] },
-        star : { point : {now, max}, list : [...{name, acquire}] },
-        heart : { point : {now, max}, list : [...{name, acquire}] },
-        art : { point : {now, max}, list : [...{name, acquire}] },
-        seed : { point : {now, max}, list : [...{now, max, continent}] },
-        voyage : { point : {now, max}, list : [...{name, acquire}] },
-        medal : { point : {now, max}, list : [...{name, acquire}] },
-        tree : { point : {now, max}, list : [...{name, acquire}] }
-    }
-}
-*/
-router.get('/:nickname', (req, res) => {
+const getCategory = {
+    title:getTitle,
+    level:getLevel,
+    abilityBasic:getAbilityBasic,
+    abilityBattle:getAbilityBattle,
+    engrave:getEngrave,
+    card:getCard,
+    gameInfo:getGameInfo,
+    equip:getEquipment,
+    skill:getSkill,
+    jewel:getJewel,
+    specialItem:getSpecialItem,
+    propensity:getPropensity,
+    collection:getCollection
+};
+
+router.get('/', (req, res) => {
     let info = {};
 
-    if (req.params.nickname != null) {
-        let url = URL_PROFILE + encodeURI(req.params.nickname);
-        let collectionParam = {};
+    const nickname = req.query.nickname;
+    const category = req.query.category; 
+
+    if (nickname != null && Object.keys(getCategory).find(key => key === category) != null) {
+        let url = URL_PROFILE + encodeURI(nickname);
 
         axios.get(url).then((result) => {
             let html = result.data;
@@ -591,35 +546,34 @@ router.get('/:nickname', (req, res) => {
                 //fs.writeFileSync('../../temp/profile.html', html, 'utf-8');
 
                 info.exist = true;
-                info.name = req.params.nickname;
-                info.characterList = getCharacters($);
-                info.class = getClass($);
-                info.server = getServer($);
-                info.level = getLevel($);
-                info.gameInfo = getGameInfo($);
-                info.specialItems = getSpecialItems($);
-                info.stats = getStats($);
-                info.skill = getSkill($);
+                info.name = nickname;
+                if (category === 'collection') {
+                    let collectionParam = {};
+                    // collection post 요청에 필요한 parameter setting
+                    collectionParam.memberNo = getMemberNo($);
+                    collectionParam.worldNo = getWorldNo($);
+                    collectionParam.pcId = getPcId($);
 
-                collectionParam.memberNo = getMemberNo($);
-                collectionParam.worldNo = getWorldNo($);
-                collectionParam.pcId = getPcId($);
+                    url = URL_COLLECTION;
+                    axios.post(url, collectionParam).then((result) => {
+                        let html = result.data;
+                        $ = cheerio.load(html);
 
-                url = URL_COLLECTION;
-                axios.post(url, collectionParam).then((result) => {
-                    html = result.data;
-                    $ = cheerio.load(html);
-
-                    // DEBUG
-                    //fs.writeFileSync('../../temp/collection.html', html, 'utf-8');
-
-                    info.collection = getCollection($);
+                        info[category] = getCollection($);
+                        res.send(info);
+                    });
+                } else if (category === 'equip' || category === 'jewel' || category === 'skill') {
+                    let profile = getProfile($);
+                    info[category] = getCategory[category]($, profile);
                     res.send(info);
-                });
+                } else {
+                    info[category] = getCategory[category]($);
+                    res.send(info);
+                }
             }
         });
     } else {
-        data.exist = false;
+        info.exist = false;
         res.send(info);
     }
 });
