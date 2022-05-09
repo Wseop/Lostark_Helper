@@ -13,7 +13,7 @@ let exchange = {};
 const categories = ['valuable', 'reforge', 'recovery', 'bomb', 'bombShine', 'util'];
 let browser;
 
-schedule.scheduleJob('*/10 * * * *', async () => {
+schedule.scheduleJob('*/7 * * * *', async () => {
     if (browser == null) {
         browser = await puppeteer.launch({
             args: ['--no-sandbox', '--disable-setuid-sandbox']
