@@ -14,7 +14,6 @@ function Navigation() {
           </NavDropdown>
         </Nav>
       </Navbar>
-      
     );
 }
 

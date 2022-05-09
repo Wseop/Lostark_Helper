@@ -4,12 +4,22 @@ import axios from 'axios';
 import '../App.css';
 import classIcon from './classIcon.js';
 
-const Search = (props) => {
-    const URL_GET_CHARACTER = `${process.env.REACT_APP_URL_SERVER}/character`;
+const URL_GET_CHARACTER = `${process.env.REACT_APP_URL_SERVER}/character`;
 
-    axios.get(`${URL_GET_CHARACTER}/${props.name}`)
+const Search = (props) => {
+    axios.get(URL_GET_CHARACTER, {
+        params: {
+            nickname:props.name,
+            category:"title"
+        }
+    })
     .then((result) => {
-        props.setInfo(result.data);
+        let exist = result.data.exist;
+
+        props.setExist(exist);
+        if (exist) {
+            props.setNickname(result.data.name)
+        }
         if (props.setName != null) {
             props.setName('');
         }
@@ -30,22 +40,38 @@ function SearchCharacter(props) {
                 }} 
                 onKeyPress={(event) => {
                 if (event.key === 'Enter') { 
-                    Search({name:name, setInfo:props.setInfo, setName:setName}); 
+                    Search({name:name, setExist:props.setExist, setName:setName, setNickname:props.setNickname}); 
                 }
             }}/>
-            <Button variant="secondary" onClick={() => {Search({name:name, setInfo:props.setInfo, setName:setName})}}>검색</Button>
+            <Button variant="secondary" onClick={() => {Search({name:name, setExist:props.setExist, setName:setName, setNickname:props.setNickname})}}>검색</Button>
         </InputGroup>
     )
 }
 
 function CharacterInfo(props) {
-    const info = props.info;
+    const name = props.nickname;
 
     const Title = () => {
-        const characters = info.characterList;
         const [listShow, setListShow] = useState(false);
+        const [title, setTitle] = useState(null);
+
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"title"
+                }
+            }).then((result) => {
+                if (result.data.exist) {
+                    setTitle(result.data.title);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
 
         const CharacterList = () => {
+            let characters = title.characterList;
             let length = characters.length;
 
             return (
@@ -61,7 +87,7 @@ function CharacterInfo(props) {
                                     } else {
                                         return (
                                             <Col key={j} className="hoverable pt-2 pb-2" style={{cursor:"pointer"}} onClick={() => {
-                                                    Search({name:characters[i * 3 + j].name, setInfo:props.setInfo})
+                                                    Search({name:characters[i * 3 + j].name, setExist:props.setExist, setNickname:props.setNickname})
                                                 }}>
                                                 <Row className="align-items-center text-center">
                                                     {
@@ -82,91 +108,148 @@ function CharacterInfo(props) {
             )
         }
 
-        return (
-            <Container className="p-1 bg-dark text-light">
-                <Row className="align-items-center">
-                    <Col></Col>
-                    <Col>
-                        <img src={info.class.imgSrc} />
-                        <span className="fw-bold">&nbsp;{info.name}</span>
-                        <span className="fw-bold text-warning">&nbsp;{info.server}</span>
-                    </Col>
-                    <Col className="text-end">
-                        <span className="me-3 fw-bold" style={{cursor:"pointer"}} onClick={() => setListShow(true)}>보유 캐릭터 ▼</span>
+        if (title == null) {
+            return null;
+        } else {
+            return (
+                <Container className="p-1 bg-dark text-light">
+                    <Row className="align-items-center">
+                        <Col></Col>
+                        <Col>
+                            <img src={title.class.imgSrc} />
+                            <span className="fw-bold">&nbsp;{name}</span>
+                            <span className="fw-bold text-warning">&nbsp;{title.server}</span>
+                        </Col>
+                        <Col className="text-end">
+                            <span className="me-3 fw-bold" style={{cursor:"pointer"}} onClick={() => setListShow(true)}>보유 캐릭터 ▼</span>
 
-                        <Modal size="xl" show={listShow} onHide={() => {setListShow(false)}} aria-labelledby="modal-character-list">
-                            <Modal.Header className="bg-dark text-light fw-bold" closeButton id="modal-character-list">
-                                <span >보유 캐릭터&nbsp;({characters.length})</span>
-                            </Modal.Header>
-                            <Modal.Body className="pt-0 pb-1 bg-dark text-light fw-bold text-start">
-                                {
-                                    characters.length == null ? null : <CharacterList />
-                                }
-                            </Modal.Body>
-                        </Modal>
-                    </Col>
-                </Row>
-            </Container>
-        )
+                            <Modal size="xl" show={listShow} onHide={() => {setListShow(false)}} aria-labelledby="modal-character-list">
+                                <Modal.Header className="bg-dark text-light fw-bold" closeButton id="modal-character-list">
+                                    <span >보유 캐릭터&nbsp;({title.characterList.length})</span>
+                                </Modal.Header>
+                                <Modal.Body className="pt-0 pb-1 bg-dark text-light fw-bold text-start">
+                                    {
+                                        title.characterList.length == null ? null : <CharacterList />
+                                    }
+                                </Modal.Body>
+                            </Modal>
+                        </Col>
+                    </Row>
+                </Container>
+            )
+        }
     };
     const Level = () => {
-        const level = info.level;
+        const [level, setLevel] = useState(null);
 
-        return (
-            <Container className="m-0 mb-1 me-0 p-2 bg-dark text-light">
-                <Row>
-                    <Col className="mt-1">
-                        <p className="m-0 bg-secondary rounded-pill">전투 레벨</p>
-                        <p className="m-2 fw-bold">{level.battle}</p>
-                    </Col>
-                    <Col className="mt-1">
-                        <p className="m-0 bg-secondary rounded-pill">원정대 레벨</p>
-                        <p className="m-2 fw-bold">{level.expedition}</p>
-                    </Col>
-                </Row>
-                <Row className="mt-2">
-                    <Col>
-                        <p className="m-0 bg-secondary rounded-pill">장착 아이템 레벨</p>
-                        <p className="m-2 fw-bold mb-0" style={{color:"#ff009b"}}>{level.itemEquip}</p>
-                    </Col>
-                    <Col>
-                        <p className="m-0 bg-secondary rounded-pill">달성 아이템 레벨</p>
-                        <p className="m-2 fw-bold mb-0" style={{color:"#f7b838"}}>{level.itemMax}</p>
-                    </Col>
-                </Row>
-            </Container>
-        )
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"level"
+                }
+            }).then((result) => {
+                if (result.data.exist) {
+                    setLevel(result.data.level);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
+
+        if (level == null) {
+            return null;
+        } else {
+            return (
+                <Container className="m-0 mb-1 me-0 p-2 bg-dark text-light">
+                    <Row>
+                        <Col className="mt-1">
+                            <p className="m-0 bg-secondary rounded-pill">전투 레벨</p>
+                            <p className="m-2 fw-bold">{level.battle}</p>
+                        </Col>
+                        <Col className="mt-1">
+                            <p className="m-0 bg-secondary rounded-pill">원정대 레벨</p>
+                            <p className="m-2 fw-bold">{level.expedition}</p>
+                        </Col>
+                    </Row>
+                    <Row className="mt-2">
+                        <Col>
+                            <p className="m-0 bg-secondary rounded-pill">장착 아이템 레벨</p>
+                            <p className="m-2 fw-bold mb-0" style={{color:"#ff009b"}}>{level.itemEquip}</p>
+                        </Col>
+                        <Col>
+                            <p className="m-0 bg-secondary rounded-pill">달성 아이템 레벨</p>
+                            <p className="m-2 fw-bold mb-0" style={{color:"#f7b838"}}>{level.itemMax}</p>
+                        </Col>
+                    </Row>
+                </Container>
+            )
+        }
     };
     const GameInfo = () => {
-        const gameInfo = info.gameInfo;
+        const [gameInfo, setGameInfo] = useState(null);
 
-        return (
-            <Container className="m-0 mb-1 me-0 p-2 bg-dark text-light">
-                <Row>
-                    <Col className="mt-1">
-                        <p className="m-0 bg-secondary rounded-pill">칭호</p>
-                        <p className="m-2 fw-bold">{gameInfo.title}</p>
-                    </Col>
-                    <Col className="mt-1">
-                        <p className="m-0 bg-secondary rounded-pill">길드</p>
-                        <p className="m-2 fw-bold">{gameInfo.guild}</p>
-                    </Col>
-                </Row>
-                <Row className="mt-2">
-                    <Col>
-                        <p className="m-0 bg-secondary rounded-pill">PVP</p>
-                        <p className="m-2 fw-bold mb-0">{gameInfo.pvp}</p>
-                    </Col>
-                    <Col>
-                        <p className="m-0 bg-secondary rounded-pill">영지</p>
-                        <p className="m-2 fw-bold mb-0">{gameInfo.dominion}</p>
-                    </Col>
-                </Row>
-            </Container>
-        )
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"gameInfo"
+                }
+            }).then((result) => {
+                if (result.data.exist) {
+                    setGameInfo(result.data.gameInfo);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
+
+        if (gameInfo == null) {
+            return null;
+        } else {
+            return (
+                <Container className="m-0 mb-1 me-0 p-2 bg-dark text-light">
+                    <Row>
+                        <Col className="mt-1">
+                            <p className="m-0 bg-secondary rounded-pill">칭호</p>
+                            <p className="m-2 fw-bold">{gameInfo.title}</p>
+                        </Col>
+                        <Col className="mt-1">
+                            <p className="m-0 bg-secondary rounded-pill">길드</p>
+                            <p className="m-2 fw-bold">{gameInfo.guild}</p>
+                        </Col>
+                    </Row>
+                    <Row className="mt-2">
+                        <Col>
+                            <p className="m-0 bg-secondary rounded-pill">PVP</p>
+                            <p className="m-2 fw-bold mb-0">{gameInfo.pvp}</p>
+                        </Col>
+                        <Col>
+                            <p className="m-0 bg-secondary rounded-pill">영지</p>
+                            <p className="m-2 fw-bold mb-0">{gameInfo.dominion}</p>
+                        </Col>
+                    </Row>
+                </Container>
+            )
+        }
     };
     const AbilityBasic = () => {
-        const abilityBasic = info.stats.abilityBasic;
+        const [abilityBasic, setAbilityBasic] = useState(null);
+
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"abilityBasic"
+                }
+            }).then((result) => {
+                if (result.data.exist) {
+                    setAbilityBasic(result.data.abilityBasic);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
 
         const AttackDetail = () => {
             return (
@@ -182,82 +265,159 @@ function CharacterInfo(props) {
                 </Container>
             )
         };
-        return (
-            <Container className="m-0 mb-1 p-2 bg-dark text-light">
-                <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">기본 특성</p>
-                <Row>
-                    <Col>
-                        <p className="m-0 fw-bold" style={{color:"#e4ba27"}}>공격력</p>
-                        <p className="m-0 fw-bold" style={{color:"#e4ba27"}}>최대 생명력</p>    
-                    </Col>
-                    <Col>
-                        <OverlayTrigger placement="right" overlay={AttackDetail()}>
-                            <p className="m-0 fw-bold">{Number(abilityBasic.attack) + Number(abilityBasic.attackEngrave)}</p>
-                        </OverlayTrigger>
-                        <p className="m-0 fw-bold">{abilityBasic.maxHp}</p>
-                    </Col>
-                </Row>
-            </Container>
-        )
+
+        if (abilityBasic == null) { 
+            return null; 
+        } else {
+            return (
+                <Container className="m-0 mb-1 p-2 bg-dark text-light">
+                    <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">기본 특성</p>
+                    <Row>
+                        <Col>
+                            <p className="m-0 fw-bold" style={{color:"#e4ba27"}}>공격력</p>
+                            <p className="m-0 fw-bold" style={{color:"#e4ba27"}}>최대 생명력</p>    
+                        </Col>
+                        <Col>
+                            <OverlayTrigger placement="right" overlay={AttackDetail()}>
+                                <p className="m-0 fw-bold">{Number(abilityBasic.attack) + Number(abilityBasic.attackEngrave)}</p>
+                            </OverlayTrigger>
+                            <p className="m-0 fw-bold">{abilityBasic.maxHp}</p>
+                        </Col>
+                    </Row>
+                </Container>
+            )
+        }
     };
     const AbilityBattle = () => {
-        const abilityBattle = info.stats.abilityBattle;
+        const [abilityBattle, setAbilityBattle] = useState(null);
 
-        return (
-            <Container className="m-0 mb-1 p-2 bg-dark text-light">
-                <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">전투 특성</p>
-                <Row>
-                    <Col>
-                        <Row><div className="text-start ms-5 fw-bold"><span style={{color:"#e4ba27"}}>치명&nbsp;</span><span>{abilityBattle.critical}</span></div></Row>
-                        <Row><div className="text-start ms-5 fw-bold"><span style={{color:"#e4ba27"}}>특화&nbsp;</span><span>{abilityBattle.specialization}</span></div></Row>
-                        <Row><div className="text-start ms-5 fw-bold"><span style={{color:"#e4ba27"}}>신속&nbsp;</span><span>{abilityBattle.swift}</span></div></Row>
-                    </Col>
-                    <Col>
-                        <Row><div className="text-start ms-3 fw-bold"><span style={{color:"#e4ba27"}}>제압&nbsp;</span><span>{abilityBattle.domination}</span></div></Row>
-                        <Row><div className="text-start ms-3 fw-bold"><span style={{color:"#e4ba27"}}>인내&nbsp;</span><span>{abilityBattle.endurance}</span></div></Row>
-                        <Row><div className="text-start ms-3 fw-bold"><span style={{color:"#e4ba27"}}>숙련&nbsp;</span><span>{abilityBattle.expertise}</span></div></Row>
-                    </Col>
-                </Row>
-            </Container>
-        )
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"abilityBattle"
+                }
+            }).then((result) => {
+                if (result.data.exist) {
+                    setAbilityBattle(result.data.abilityBattle);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
+
+        if (abilityBattle == null) {
+            return null;
+        } else {
+            return (
+                <Container className="m-0 mb-1 p-2 bg-dark text-light">
+                    <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">전투 특성</p>
+                    <Row>
+                        <Col>
+                            <Row><div className="text-start ms-5 fw-bold"><span style={{color:"#e4ba27"}}>치명&nbsp;</span><span>{abilityBattle.critical}</span></div></Row>
+                            <Row><div className="text-start ms-5 fw-bold"><span style={{color:"#e4ba27"}}>특화&nbsp;</span><span>{abilityBattle.specialization}</span></div></Row>
+                            <Row><div className="text-start ms-5 fw-bold"><span style={{color:"#e4ba27"}}>신속&nbsp;</span><span>{abilityBattle.swift}</span></div></Row>
+                        </Col>
+                        <Col>
+                            <Row><div className="text-start ms-3 fw-bold"><span style={{color:"#e4ba27"}}>제압&nbsp;</span><span>{abilityBattle.domination}</span></div></Row>
+                            <Row><div className="text-start ms-3 fw-bold"><span style={{color:"#e4ba27"}}>인내&nbsp;</span><span>{abilityBattle.endurance}</span></div></Row>
+                            <Row><div className="text-start ms-3 fw-bold"><span style={{color:"#e4ba27"}}>숙련&nbsp;</span><span>{abilityBattle.expertise}</span></div></Row>
+                        </Col>
+                    </Row>
+                </Container>
+            )
+        }
     };
     const Engrave = () => {
-        const engraves = info.stats.engrave;
+        const [engrave, setEngrave] = useState(null);
 
-        return (
-            <Container className="m-0 mb-1 p-2 bg-dark text-light">
-                <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">각인</p>
-                {
-                    engraves.map((v, i) => {
-                        return (
-                            <div key={i} className="fw-bold">{v}</div>
-                        )
-                    })
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"engrave"
                 }
-            </Container>
-        )
+            }).then((result) => {
+                if (result.data.exist) {
+                    setEngrave(result.data.engrave);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
+
+        if (engrave == null) {
+            return null;
+        } else {
+            return (
+                <Container className="m-0 mb-1 p-2 bg-dark text-light">
+                    <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">각인</p>
+                    {
+                        engrave.map((v, i) => {
+                            return (
+                                <div key={i} className="fw-bold">{v}</div>
+                            )
+                        })
+                    }
+                </Container>
+            )
+        }
     };
     const Card = () => {
-        const cards = info.stats.card;
+        const [card, setCard] = useState(null);
 
-        return (
-            <Container className="m-0 mb-1 p-2 bg-dark text-light">
-                <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">카드</p>
-                {
-                    cards.map((v, i) => {
-                        return (
-                            <div key={i} className="fw-bold">
-                                <p className="m-0 p-0" style={{color:"#63e925"}}>{v.title}</p>
-                                <p>{v.effect}</p>
-                            </div>
-                        )
-                    })
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"card"
                 }
-            </Container>
-        )
+            }).then((result) => {
+                if (result.data.exist) {
+                    setCard(result.data.card);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
+
+        if (card == null) {
+            return null;
+        } else {
+            return (
+                <Container className="m-0 mb-1 p-2 bg-dark text-light">
+                    <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">카드</p>
+                    {
+                        card.map((v, i) => {
+                            return (
+                                <div key={i} className="fw-bold">
+                                    <p className="m-0 p-0" style={{color:"#63e925"}}>{v.title}</p>
+                                    <p>{v.effect}</p>
+                                </div>
+                            )
+                        })
+                    }
+                </Container>
+            )
+        }
     };
-    const Stats = () => {
-        const stats = info.stats;
+    const Equipment = () => {
+        const [equipment, setEquipment] = useState(null);
+
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"equip"
+                }
+            }).then((result) => {
+                if (result.data.exist) {
+                    setEquipment(result.data.equip);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
 
         const QualityValue = (props) => {
             const quality = props.quality;
@@ -318,7 +478,7 @@ function CharacterInfo(props) {
             }
         }
         const Weapon = () => {
-            const weapon = stats.equipment.weapon;
+            const weapon = equipment.weapon;
 
             const WeaponDetail = () => {
                 return (
@@ -368,7 +528,7 @@ function CharacterInfo(props) {
             }
         };
         const Armors = () => {
-            const armors = stats.equipment.armors;
+            const armors = equipment.armors;
 
             const ArmorDetail = (armor) => {
                 return (
@@ -435,7 +595,7 @@ function CharacterInfo(props) {
             )
         };
         const Accessories = () => {
-            const accessories = stats.equipment.accessories;
+            const accessories = equipment.accessories;
 
             const AccessoryDetail = (accessory) => {
                 return (
@@ -529,7 +689,7 @@ function CharacterInfo(props) {
             )
         };
         const Bracelet = () => {
-            const bracelet = stats.equipment.bracelet;
+            const bracelet = equipment.bracelet;
 
             const BraceletDetail = () => {
                 return (
@@ -570,7 +730,7 @@ function CharacterInfo(props) {
             }
         };
         const Stone = () => {
-            const stone = stats.equipment.stone;
+            const stone = equipment.stone;
 
             const StoneDetail = () => {
                 const effectTitle = ["기본 효과", "세공 단계 보너스"];
@@ -635,18 +795,37 @@ function CharacterInfo(props) {
             }
         };
 
-        return (
-            <Container className="m-0 mb-2 p-0">
-                <Armors />
-                <Weapon />
-                <Accessories />
-                <Bracelet />
-                <Stone />
-            </Container>
-        )
+        if (equipment == null) {
+            return null;
+        } else {
+            return (
+                <Container className="m-0 mb-2 p-0">
+                    <Armors />
+                    <Weapon />
+                    <Accessories />
+                    <Bracelet />
+                    <Stone />
+                </Container>
+            )
+        }
     };
     const Skill = () => {
-        const skill = info.skill;
+        const [skill, setSkill] = useState(null);
+
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"skill"
+                }
+            }).then((result) => {
+                if (result.data.exist) {
+                    setSkill(result.data.skill);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
 
         const Points = () => {
             return (
@@ -737,172 +916,266 @@ function CharacterInfo(props) {
             )
         }
 
-        return (
-            <Container className="m-0 mb-2 p-0">
-                <Points />
-                {
-                    skill.skills.map((skill, i) => {
-                        return (
-                            <Detail key={i} skill={skill}/>
-                        )
-                    })
-                }
-            </Container>
-        )
-    };
-    const Jewel = () => {
-        const jewels = info.stats.jewels;
-
-        return (
-            <Container className="m-0 mb-2 p-0">
-                {
-                    jewels.map((jewel, i) => {
-                        if (jewel == null) {
-                            return null;
-                        } else {
-                            return (
-                                <Container key={i} className="m-0 p-0 pt-2 ps-2 pe-2 bg-dark text-light text-start">
-                                    <Row className="mb-2 align-items-center">
-                                        <Col>
-                                            <img className="border border-secondary rounded-3" src={jewel.imgSrc} width="50px"/>
-                                            <span className={"data-grade-" + jewel.dataGrade + " fw-bold + ms-3"}>{jewel.name}</span>
-                                        </Col>
-                                        <Col xs={3}>
-                                            <span className="ms-3 fw-bold" style={{color:"#3cf"}}>{jewel.effect.skill}</span>
-                                        </Col>
-                                        <Col xs={5}>
-                                            <span className="ms-3 fw-bold">{jewel.effect.effect}</span>
-                                        </Col>
-                                    </Row>
-                                    <hr className="m-0"/>
-                                </Container>
-                            )
-                        }
-                    })
-                }
-            </Container>
-        )
-    };
-    const Collection = () => {
-        const SpecialItems = () => {
-            const items = info.specialItems;
-
-            return(
-                <Container className="m-0 mb-1 p-2 bg-dark text-light text-start">
-                    <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">&nbsp;특수 장비&nbsp;</p>
+        if (skill == null) {
+            return null;
+        } else {
+            return (
+                <Container className="m-0 mb-2 p-0">
+                    <Points />
                     {
-                        items.map((item, i) => {
+                        skill.skills.map((skill, i) => {
                             return (
-                                <div key={i} className="mt-2">
-                                    <img className="border border-secondary rounded-3" src={item.imgSrc} width="50px"/>
-                                    <span className={"data-grade-" + item.dataGrade + " fw-bold"}>&nbsp;&nbsp;{item.name}</span>
-                                </div>
+                                <Detail key={i} skill={skill}/>
                             )
                         })
                     }
                 </Container>
             )
-        };
-        const Propensity = () => {
-            const propensity = info.stats.propensity;
+        }
+    };
+    const Jewel = () => {
+        const [jewels, setJewels] = useState(null);
 
+        useEffect(() => {
+            axios.get(URL_GET_CHARACTER, {
+                params: {
+                    nickname:name,
+                    category:"jewel"
+                }
+            }).then((result) => {
+                if (result.data.exist) {
+                    setJewels(result.data.jewel);
+                }
+            }).catch((err) => {
+                console.log(err);
+            });
+        }, []);
+
+        if (jewels == null) {
+            return null;
+        } else {
             return (
-                <Container className="m-0 mb-1 p-2 bg-dark text-light text-start">
-                    <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">&nbsp;성향&nbsp;</p>
-                    <div>
-                        <div className="fw-bold d-flex justify-content-between"><span>지성</span><span>{propensity.intelligence}</span></div>
-                        <ProgressBar variant="info" now={Number(propensity.intelligence) / 999 * 100}/>
-                    </div>
-                    <div>
-                        <div className="fw-bold d-flex justify-content-between"><span>담력</span><span>{propensity.courage}</span></div>
-                        <ProgressBar variant="info" now={Number(propensity.courage) / 999 * 100}/>
-                    </div>
-                    <div>
-                        <div className="fw-bold d-flex justify-content-between"><span>매력</span><span>{propensity.charm}</span></div>
-                        <ProgressBar variant="info" now={Number(propensity.charm) / 999 * 100}/>
-                    </div>
-                    <div>
-                        <div className="fw-bold d-flex justify-content-between"><span>친절</span><span>{propensity.kindness}</span></div>
-                        <ProgressBar variant="info" now={Number(propensity.kindness) / 999 * 100}/>
-                    </div>
+                <Container className="m-0 mb-2 p-0">
+                    {
+                        jewels.map((jewel, i) => {
+                            if (jewel == null) {
+                                return null;
+                            } else {
+                                return (
+                                    <Container key={i} className="m-0 p-0 pt-2 ps-2 pe-2 bg-dark text-light text-start">
+                                        <Row className="mb-2 align-items-center">
+                                            <Col>
+                                                <img className="border border-secondary rounded-3" src={jewel.imgSrc} width="50px"/>
+                                                <span className={"data-grade-" + jewel.dataGrade + " fw-bold + ms-3"}>{jewel.name}</span>
+                                            </Col>
+                                            <Col xs={3}>
+                                                <span className="ms-3 fw-bold" style={{color:"#3cf"}}>{jewel.effect.skill}</span>
+                                            </Col>
+                                            <Col xs={5}>
+                                                <span className="ms-3 fw-bold">{jewel.effect.effect}</span>
+                                            </Col>
+                                        </Row>
+                                        <hr className="m-0"/>
+                                    </Container>
+                                )
+                            }
+                        })
+                    }
                 </Container>
             )
-        };
-        const Point = () => {
-            const collection = info.collection;
-            const names = {
-                island: "섬의 마음", star: "오르페우스의 별", heart: "거인의 심장", art: "위대한 미술품", 
-                seed: "모코코 씨앗", voyage: "항해 모험물", medal: "이그네아의 징표", tree: "세계수의 잎"
-            };
-            const [detail, setDetail] = useState(collection.island.list);
+        }
+    };
+    const Collection = () => {
+        const SpecialItems = () => {
+            const [items, setItems] = useState(null);
 
-            const Status = (key) => {
-                const element = collection[key];
-                const progress = Math.floor(Number(element.point.now.replace(/,/g, '')) / Number(element.point.max.replace(/,/g, '')) * 100);
+            useEffect(() => {
+                axios.get(URL_GET_CHARACTER, {
+                    params: {
+                        nickname:name,
+                        category:"specialItem"
+                    }
+                }).then((result) => {
+                    if (result.data.exist) {
+                        setItems(result.data.specialItem);
+                    }
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }, []);
 
-                return (
-                    <Container key={key} className="m-0 p-0 pt-2 ps-2 pe-2 bg-dark text-light text-start" style={{cursor:"pointer"}} onClick={() => {setDetail(element.list)}}>
-                        <Row className="mb-2 align-items-center" style={{height:"50px"}}>
-                            <Col xs={5} className="m-0 p-0 ps-3 fw-bold"><span>{names[key]}</span></Col>
-                            <Col className="text-end">
-                                <span className="fw-bold" style={{color:"#ffd200"}}>
-                                    {element.point.now}&nbsp;/&nbsp;{element.point.max}&nbsp;
-                                    <img src={process.env.PUBLIC_URL + `/img/icon_collect_${key}.png`} />
-                                </span>
-                                <ProgressBar variant="warning" now={progress} label={`${progress}%`}/>
-                            </Col>
-                        </Row>
-                        <hr className="m-0" />
-                    </Container>
-                )
-            };
-            const Detail = () => {
-                return (
-                    <Container className="m-0 p-0 pt-2 ps-2 pe-2 bg-dark text-light text-start" style={{height:"536px", overflowY:"scroll" }}>
+            if (items == null) {
+                return null;
+            } else {
+                return(
+                    <Container className="m-0 mb-1 p-2 bg-dark text-light text-start">
+                        <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">&nbsp;특수 장비&nbsp;</p>
                         {
-                            detail.map((element, i) => {
+                            items.map((item, i) => {
                                 return (
-                                        <Row key={i} className="align-items-center" style={{height:"50px"}}>
-                                            <Col xs={1} className="m-0 p-0 ps-2 fw-bold"><span>{i + 1}.&nbsp;</span></Col>
-                                            <Col className="m-0 p-0 ps-1">
-                                                <span className="fw-bold">
-                                                    {
-                                                        element.name != null ? element.name : element.continent
-                                                    }
-                                                </span>
-                                            </Col>
-                                            <Col xs={3} className="m-0 p-0 pe-2 text-end">
-                                                <span className="fw-bold" style={{color:"#ffd200"}}>
-                                                    {
-                                                        element.acquire != null ? element.acquire === true ? "획득" : null :
-                                                        element.now + " / " + element.max
-                                                    }
-                                                </span>
-                                            </Col>
-                                            <hr className="m-0" />
-                                        </Row>
+                                    <div key={i} className="mt-2">
+                                        <img className="border border-secondary rounded-3" src={item.imgSrc} width="50px"/>
+                                        <span className={"data-grade-" + item.dataGrade + " fw-bold"}>&nbsp;&nbsp;{item.name}</span>
+                                    </div>
                                 )
                             })
                         }
                     </Container>
                 )
+            }
+        };
+        const Propensity = () => {
+            const [propensity, setPropensity] = useState(null);
+
+            useEffect(() => {
+                axios.get(URL_GET_CHARACTER, {
+                    params: {
+                        nickname:name,
+                        category:"propensity"
+                    }
+                }).then((result) => {
+                    if (result.data.exist) {
+                        setPropensity(result.data.propensity);
+                    }
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }, []);
+
+            if (propensity == null) {
+                return null;
+            } else {
+                return (
+                    <Container className="m-0 mb-1 p-2 bg-dark text-light text-start">
+                        <p className="m-0 mb-1 bg-secondary rounded-pill mx-auto text-center w-50">&nbsp;성향&nbsp;</p>
+                        <div>
+                            <div className="fw-bold d-flex justify-content-between"><span>지성</span><span>{propensity.intelligence}</span></div>
+                            <ProgressBar variant="info" now={Number(propensity.intelligence) / 999 * 100}/>
+                        </div>
+                        <div>
+                            <div className="fw-bold d-flex justify-content-between"><span>담력</span><span>{propensity.courage}</span></div>
+                            <ProgressBar variant="info" now={Number(propensity.courage) / 999 * 100}/>
+                        </div>
+                        <div>
+                            <div className="fw-bold d-flex justify-content-between"><span>매력</span><span>{propensity.charm}</span></div>
+                            <ProgressBar variant="info" now={Number(propensity.charm) / 999 * 100}/>
+                        </div>
+                        <div>
+                            <div className="fw-bold d-flex justify-content-between"><span>친절</span><span>{propensity.kindness}</span></div>
+                            <ProgressBar variant="info" now={Number(propensity.kindness) / 999 * 100}/>
+                        </div>
+                    </Container>
+                )
+            }
+        };
+        const Point = () => {
+            const names = {
+                island: "섬의 마음", star: "오르페우스의 별", heart: "거인의 심장", art: "위대한 미술품", 
+                seed: "모코코 씨앗", voyage: "항해 모험물", medal: "이그네아의 징표", tree: "세계수의 잎"
             };
-            return (
-                <Container className="m-0 mb-2 p-0">
-                    <Row>
-                        <Col className="pe-1">
+            const [collection, setCollection] = useState(null);
+            const [detail, setDetail] = useState(null);
+
+            useEffect(() => {
+                axios.get(URL_GET_CHARACTER, {
+                    params: {
+                        nickname: name,
+                        category: "collection"
+                    }
+                }).then((result) => {
+                    if (result.data.exist) {
+                        setCollection(result.data.collection);
+                    }
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }, []);
+            useEffect(() => {
+                if (collection != null) {
+                    setDetail(collection.island.list);
+                }
+            }, [collection]);
+
+            const Status = (key) => {
+                const element = collection[key];
+                const progress = Math.floor(Number(element.point.now.replace(/,/g, '')) / Number(element.point.max.replace(/,/g, '')) * 100);
+
+                if (element == null) {
+                    return null;
+                } else {
+                    return (
+                        <Container key={key} className="m-0 p-0 pt-2 ps-2 pe-2 bg-dark text-light text-start" style={{cursor:"pointer"}} onClick={() => {setDetail(element.list)}}>
+                            <Row className="mb-2 align-items-center" style={{height:"50px"}}>
+                                <Col xs={5} className="m-0 p-0 ps-3 fw-bold"><span>{names[key]}</span></Col>
+                                <Col className="text-end">
+                                    <span className="fw-bold" style={{color:"#ffd200"}}>
+                                        {element.point.now}&nbsp;/&nbsp;{element.point.max}&nbsp;
+                                        <img src={process.env.PUBLIC_URL + `/img/icon_collect_${key}.png`} />
+                                    </span>
+                                    <ProgressBar variant="warning" now={progress} label={`${progress}%`}/>
+                                </Col>
+                            </Row>
+                            <hr className="m-0" />
+                        </Container>
+                    )
+                }
+            };
+            const Detail = () => {
+                if (detail == null) {
+                    return null;
+                } else {
+                    return (
+                        <Container className="m-0 p-0 pt-2 ps-2 pe-2 bg-dark text-light text-start" style={{height:"536px", overflowY:"scroll" }}>
                             {
-                                Object.keys(collection).map((key, i) => {
-                                    return Status(key);
+                                detail.map((element, i) => {
+                                    return (
+                                            <Row key={i} className="align-items-center" style={{height:"50px"}}>
+                                                <Col xs={1} className="m-0 p-0 ps-2 fw-bold"><span>{i + 1}.&nbsp;</span></Col>
+                                                <Col className="m-0 p-0 ps-1">
+                                                    <span className="fw-bold">
+                                                        {
+                                                            element.name != null ? element.name : element.continent
+                                                        }
+                                                    </span>
+                                                </Col>
+                                                <Col xs={3} className="m-0 p-0 pe-2 text-end">
+                                                    <span className="fw-bold" style={{color:"#ffd200"}}>
+                                                        {
+                                                            element.acquire != null ? element.acquire === true ? "획득" : null :
+                                                            element.now + " / " + element.max
+                                                        }
+                                                    </span>
+                                                </Col>
+                                                <hr className="m-0" />
+                                            </Row>
+                                    )
                                 })
                             }
-                        </Col>
-                        <Col className="ps-0">
-                            <Detail />
-                        </Col>
-                    </Row>
-                </Container>
-            )
+                        </Container>
+                    )
+                }
+            };
+
+            if (collection == null) {
+                return null;
+            } else {
+                return (
+                    <Container className="m-0 mb-2 p-0">
+                        <Row>
+                            <Col className="pe-1">
+                                {
+                                    Object.keys(collection).map((key, i) => {
+                                        return Status(key);
+                                    })
+                                }
+                            </Col>
+                            <Col className="ps-0">
+                                <Detail />
+                            </Col>
+                        </Row>
+                    </Container>
+                )
+            }
         };
 
         return (
@@ -937,7 +1210,7 @@ function CharacterInfo(props) {
                 <Col className="ms-2 p-0">
                     <Tabs defaultActiveKey="stats" className="profileTab">
                         <Tab eventKey="stats" title="장비">
-                            <Stats />
+                            <Equipment />
                         </Tab>
                         <Tab eventKey="skill" title="스킬">
                             <Skill />
@@ -956,7 +1229,8 @@ function CharacterInfo(props) {
 }
 
 function Profile() {
-    const [info, setInfo] = useState({});
+    const [exist, setExist] = useState(null);
+    const [nickname, setNickname] = useState();
 
     const NotFound = () => {
         return (
@@ -968,11 +1242,10 @@ function Profile() {
 
     return (
         <Container>
-            <SearchCharacter setInfo={setInfo}/>
+            <SearchCharacter setExist={setExist} setNickname={setNickname}/>
             {
-                info.exist == null  ? null : 
-                info.exist === true ? <CharacterInfo info={info} setInfo={setInfo}/> : 
-                                      <NotFound />
+                exist == null ? null : 
+                exist === true ? <CharacterInfo nickname={nickname} setExist={setExist} setNickname={setNickname}/> : <NotFound />
             }
         </Container>
     );
