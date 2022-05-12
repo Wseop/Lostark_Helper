@@ -1,11 +1,11 @@
 [
     {
-        "type":"market", "itemName":"에스더의 기운", "grade":99, "collection":"price_esther"
+        "type":"market", "itemName":"에스더의 기운", "grade":99
     },
     {
-        "type":"auction", "itemName":"10레벨 멸화의 보석", "collection":"price_10myul"
+        "type":"auction", "itemName":"10레벨 멸화의 보석"
     },
     {
-        "type":"auction", "itemName":"10레벨 홍염의 보석", "collection":"price_10hong"
+        "type":"auction", "itemName":"10레벨 홍염의 보석"
     }
 ]

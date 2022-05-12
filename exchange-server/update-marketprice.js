@@ -9,6 +9,7 @@ const db = require('./db.js');
 const webLoa = require('./web-loa.js');
 const exchange = require('./update-exchange.js');
 const time = require('./format-time.js');
+require('dotenv').config();
 
 let marketprice = {};
 let browser;
@@ -24,7 +25,7 @@ schedule.scheduleJob('0 */1 * * *', async() => {
     await webLoa.filterResource(page);
     await page.setCookie(webLoa.cookie);
 
-    const items = JSON.parse(fs.readFileSync(__dirname + '/data/valuable.json', 'utf-8'));
+    const items = JSON.parse(fs.readFileSync(__dirname + '/data/marketPrice.json', 'utf-8'));
     for (let item of items) {
         await updateMarketPrice(page, item);
     }
@@ -40,12 +41,22 @@ async function updateMarketPrice(page, item) {
     }
 
     if (price != null) {
-        let data = {time:time.getTime(), price:price};
+        let newData = {time:time.getTime(), price:price};
+        let prices;
 
-        await db.client.collection(item.collection).insertOne(data, (err, res) => {
-            if (err) return console.log(err);
+        // name이 일치하는 element를 find
+        db.client.collection(process.env.NAME_COLLECTION_MARKETPRICE).findOne({itemName:item.itemName}, (err, res) => {
+            if (err) throw err;
 
-            console.log(`[${time.getTime()}] | [UPDATE_MARKETPRICE] | ${item.collection} updated`);
+            prices = res.prices;
+            // 가격 정보 추가
+            prices.push(newData);
+            // db update
+            db.client.collection(process.env.NAME_COLLECTION_MARKETPRICE).updateOne({itemName:item.itemName}, {$set:{prices:prices}}, (err, res) => {
+                if (err) throw err;
+
+                console.log(`[${time.getTime()}] | [UPDATE_MARKETPRICE] | ${item.itemName} updated`);
+            });
         });
     }
 }

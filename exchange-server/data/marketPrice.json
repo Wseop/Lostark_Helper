@@ -1,0 +1,143 @@
+[
+    {
+        "type":"market", "itemName":"에스더의 기운", "grade":99, "category":"valuable"
+    },
+    {
+        "type":"auction", "itemName":"10레벨 멸화의 보석", "category":"valuable"
+    },
+    {
+        "type":"auction", "itemName":"10레벨 홍염의 보석", "category":"valuable"
+    },
+    {
+        "type":"market", "itemName":"광기", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"광전사의 비기", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"분노의 망치", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"중력 수련", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"전투 태세", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"고독한 기사", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"심판자", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"축복의 오라", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"황후의 은총", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"황제의 칙령", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"상급 소환사", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"넘치는 교감", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"진실된 용맹", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"절실한 구원", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"점화", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"환류", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"오의 강화", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"초심", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"극의: 체술", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"충격 단련", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"세맥타통", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"역천지체", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"절정", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"절제", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"일격필살", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"오의난무", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"잔재된 기운", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"버스트", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"완벽한 억제", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"멈출 수 없는 충동", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"갈증", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"달의 소리", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"두 번째 동료", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"죽음의 습격", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"강화 무기", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"핸드거너", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"화력 강화", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"포격 강화", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"아르데타인의 기술", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"진화의 유산", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"피스메이커", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"사냥의 시간", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"회귀", "grade":4, "category":"engraveClass"
+    },
+    {
+        "type":"market", "itemName":"만개", "grade":4, "category":"engraveClass"
+    }
+]
