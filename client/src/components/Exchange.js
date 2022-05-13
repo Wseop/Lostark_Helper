@@ -1,7 +1,7 @@
 import { React, useState, useEffect } from 'react';
 import axios from 'axios';
 import { Container, Spinner, Table, Tabs, Tab, Row, Col, OverlayTrigger, Tooltip, Button, Modal, Alert } from 'react-bootstrap';
-import { ResponsiveLine } from '@nivo/line';
+import { VictoryLine, VictoryChart, VictoryZoomContainer, VictoryTheme, VictoryLabel, VictoryAxis } from 'victory';
 
 import '../App.css';
 
@@ -55,9 +55,9 @@ function TableRow(props) {
                                 {item.name}
                             </Modal.Header>
                             <Modal.Body>
-                                <HighPriceChart id={item.name} />
+                                <MarketPriceChart itemName={item.name} />
                                 <Alert variant="secondary">
-                                    시세 정보는 1시간 단위로 업데이트되며, 최대 30개까지 표시됩니다. (서버가 꺼져있을 경우 데이터 수집이 진행되지 않습니다.)
+                                    시세 정보는 1시간 단위로 업데이트됩니다. (서버가 꺼져있을 경우 데이터 수집이 진행되지 않습니다.)
                                 </Alert>
                             </Modal.Body>
                         </Modal>
@@ -142,81 +142,41 @@ function ItemInfo(props) {
     
 }
 
-const PriceChart = (props) => (
-    <ResponsiveLine
-        data={props.data}
-        margin={{ top: 50, right: 60, bottom: 50, left: 80 }}
-        xScale={{ type: 'point' }}
-        yScale={{
-            type: 'linear',
-            min: 'auto',
-            max: 'auto',
-            stacked: false,
-            reverse: false
-        }}
-        axisTop={null}
-        axisRight={null}
-        axisBottom={{
-            orient: 'bottom',
-            tickSize: 5,
-            tickPadding: 5,
-            tickRotation: 40,
-            legendOffset: 50,
-            legendPosition: 'middle'
-        }}
-        axisLeft={{
-            orient: 'left',
-            tickSize: 1,
-            tickPadding: 1,
-            tickRotation: 0,
-            legend: '가격',
-            legendOffset: -60,
-            legendPosition: 'middle'
-        }}
-        colors={{ scheme: 'category10' }}
-        pointSize={10}
-        pointColor={{ from: 'color', modifiers: [] }}
-        pointBorderWidth={2}
-        pointBorderColor={{ from: 'serieColor' }}
-        pointLabelYOffset={-12}
-        useMesh={true}
-    />
-)
-
-const HighPriceChart = (props) => {
+const MarketPriceChart = (props) => {
     const [data, setData] = useState([]);
     const [dataLoaded, setDataLoaded] = useState(false);
     const urlMarketprice = process.env.REACT_APP_URL_SERVER + '/marketprice';
 
-    useEffect(async () => {
-        let newData = [];
-        let item = {};
-
-        item.id = props.id;
-        item.data = [];
-        await axios.get(urlMarketprice, {
+    useEffect(() => {
+        axios.get(urlMarketprice, {
             params: {
-                itemName:props.id
+                itemName:props.itemName
             }
-        }).then((result) => {
-            let elements = result.data.reverse();
-
-            for (let i = 0; i < 30; i++) {
-                if (i >= elements.length) break;
-                item.data.push({x:elements[i].time, y:Number(elements[i].price.replace(/,/g, ''))});
-            }
+        }).then(async result => {
+            let newData;
+            newData = await Promise.all(result.data.map(async (v, i) => {
+                v.price = Number(v.price.replace(/,/g, ''));
+                return v;
+            }));
+            setData([...data, ...newData]);
+            setDataLoaded(true);
+        })
+        .catch(err => {
+            console.log(err);
         });
-        item.data = item.data.reverse();
-        newData.push(item);
-
-        setData([...data, ...newData]);
-        setDataLoaded(true);
     }, []);
 
     if (dataLoaded) {
         return (
-            <Container className="mb-4" style={{height:"500px"}}>
-                <PriceChart data={data} />
+            <Container className="pb-4" style={{height:"600px"}}>
+                <VictoryChart theme={VictoryTheme.material} width={600} containerComponent={<VictoryZoomContainer zoomDimension="x"/>}>
+                    <VictoryAxis dependentAxis/>
+                    <VictoryAxis style={{tickLabels:{angle:-45, padding:20, fontSize:10}, padding:50}}/>
+                    <VictoryLine data={data} x="time" y="price" 
+                        animate={{duration: 2000, onLoad: { duration: 1000 }}}
+                        style={{data: {stroke: "#c43a31", parent:{border: "1px solid #ccc"}}}}
+                    />
+                </VictoryChart>
             </Container>
         )
     } else {
@@ -263,7 +223,7 @@ function Exchange() {
                     <Container>
                         <Row>
                             <Col><ItemInfo category="engraveCommon" chart={false} /></Col>
-                            <Col><ItemInfo category="engraveClass" chart={false} /></Col>
+                            <Col><ItemInfo category="engraveClass" chart={true} /></Col>
                         </Row>
                     </Container>
                 </Tab>
