@@ -40,7 +40,13 @@ async function updateMarketPrice(page, item) {
         price = (await exchange.getPriceFromAuction(page, item.itemName)).price;
     }
 
-    if (price != null) {
+    // 직업 각인서인 경우 itemName을 fullname으로 변경 (각인서는 검색을 위해 간소화된 이름으로 mapping되어 있음)
+    if (item.category === 'engraveClass') {
+        const engraveClassMap = JSON.parse(fs.readFileSync(__dirname + '/data/engraveClassMap.json', 'utf-8'));
+        item.itemName = engraveClassMap[item.itemName] + ' ' + item.itemName + ' 각인서';
+    }
+
+    if (price != null && price != '') {
         let newData = {time:time.getTime(), price:price};
         let prices;
 
