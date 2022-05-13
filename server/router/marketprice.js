@@ -4,26 +4,17 @@ const fs = require('fs');
 const db = require('../db.js');
 require('dotenv').config();
 
-const collections = JSON.parse(fs.readFileSync(__dirname + '/../data/item-collection.json', 'utf-8'));
-
 router.get('/', (req, res) => {
     let itemName = req.query.itemName;
-    const collection = collections[itemName];
     
-    new Promise((resolve, reject) => {
-        let datas = [];
+    db.client.collection(process.env.NAME_COLLECTION_MARKETPRICE).findOne({itemName:itemName}, (err, result) => {
+        if (err) throw err;
 
-        db.client.collection(collection).find().toArray((err, res) => {
-            if (err) return console.log(err);
-    
-            res.map((v, i) => {
-                let data = {time:v.time, price:v.price};
-                datas.push(data);
-            });
-            resolve(datas);
-        });
-    }).then((datas) => {
-        res.send(datas);
+        if (result == null) {
+            res.send(null);
+        } else {
+            res.send(result.prices);
+        }
     });
 });
 
